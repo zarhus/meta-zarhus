@@ -6,6 +6,10 @@ repos:
     layers:
       meta-zarhus-distro:
 
+  meta-webkit:
+    url: https://github.com/Igalia/meta-webkit.git
+    refspec: 84b47e79909804e9c43450de71eb9779a9634298
+
   meta-zarhus-bsp-rockchip:
     url: https://github.com/zarhus/meta-zarhus-bsp-rockchip.git
     refspec: e762b36e4672bc45768537342beaa02b6eafcc0f
@@ -27,6 +31,7 @@ repos:
       meta-oe:
       meta-networking:
       meta-python:
+      meta-multimedia:
 
   meta-rockchip:
     url: https://git.yoctoproject.org/git/meta-rockchip
