@@ -1,0 +1,9 @@
+header:
+  version: 11
+  includes:
+    - kas/common.yml
+
+distro: zarhus-distro
+machine: zarhus-machine
+target:
+  - zarhus-base-image

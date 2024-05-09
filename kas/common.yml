@@ -1,0 +1,62 @@
+header:
+  version: 11
+
+repos:
+  meta-zarhus:
+    layers:
+      meta-zarhus-distro:
+
+  meta-zarhus-bsp-rockchip:
+    url: https://github.com/zarhus/meta-zarhus-bsp-rockchip.git
+    refspec: e762b36e4672bc45768537342beaa02b6eafcc0f
+    layers:
+      meta-bsp:
+
+  poky:
+    url: https://git.yoctoproject.org/git/poky
+    refspec: eb723d4a1082b10d14554f799c6c31cee620152d
+    layers:
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+
+  meta-openembedded:
+    url: https://git.openembedded.org/meta-openembedded
+    refspec: 6819f825caf750b4deac5d8dda1b81f3380615be
+    layers:
+      meta-oe:
+      meta-networking:
+      meta-python:
+
+  meta-rockchip:
+    url: https://git.yoctoproject.org/git/meta-rockchip
+    refspec: 88f2064ca2b83b42a7c8a59616ab80b763ef2485
+
+  meta-arm:
+    url: https://git.yoctoproject.org/git/meta-arm
+    refspec: 6e9525115bd45c86e241d62a4af069f7b1b8b973
+    layers:
+      meta-arm:
+      meta-arm-toolchain:
+
+bblayers_conf_header:
+  standard: |
+    POKY_BBLAYERS_CONF_VERSION = "2"
+    BBPATH = "${TOPDIR}"
+    BBFILES ?= ""
+local_conf_header:
+  standard: |
+    CONF_VERSION = "2"
+    PACKAGE_CLASSES = "package_rpm"
+    SDKMACHINE = "x86_64"
+  diskmon: |
+    BB_DISKMON_DIRS = "\
+        STOPTASKS,${TMPDIR},1G,100K \
+        STOPTASKS,${DL_DIR},1G,100K \
+        STOPTASKS,${SSTATE_DIR},1G,100K \
+        STOPTASKS,/tmp,100M,100K \
+        <BUILD_STOP_KEYWORD>,${TMPDIR},100M,1K \
+        <BUILD_STOP_KEYWORD>,${DL_DIR},100M,1K \
+        <BUILD_STOP_KEYWORD>,${SSTATE_DIR},100M,1K \
+        <BUILD_STOP_KEYWORD>,/tmp,10M,1K"
+

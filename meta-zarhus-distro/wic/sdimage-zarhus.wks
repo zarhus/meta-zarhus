@@ -1,0 +1,6 @@
+# short-description: Create system image with zarhus application
+# long-description: Creates a partitioned system image for use with
+# rock-3a. Boot files are located in the first vfat partition.
+
+part /boot  --source bootimg-partition --ondisk mmcblk0 --fstype=vfat --label boot   --align 4096 --fixed-size 64  --active
+part /      --source rootfs            --ondisk mmcblk0 --fstype=ext4 --label rootfs --align 4096 --fixed-size 512
