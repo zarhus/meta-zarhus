@@ -8,6 +8,4 @@ inherit core-image
 
 IMAGE_INSTALL:append = " \
   packagegroup-zarhus-system \
-  cog \
-  wayland \
 "
