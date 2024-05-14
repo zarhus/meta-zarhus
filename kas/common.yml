@@ -12,7 +12,7 @@ repos:
 
   meta-zarhus-bsp-rockchip:
     url: https://github.com/zarhus/meta-zarhus-bsp-rockchip.git
-    refspec: e762b36e4672bc45768537342beaa02b6eafcc0f
+    refspec: 7cfd5dcf307fb81df8a487bcd354ac87c3ca5cd1
     layers:
       meta-bsp:
 
