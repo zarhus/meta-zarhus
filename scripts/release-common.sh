@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# SPDX-FileCopyrightText: 2022 3mdeb Embedded Systems Consulting <contact@3mdeb.com>
+# SPDX-FileCopyrightText: 2024 3mdeb Embedded Systems Consulting <contact@3mdeb.com>
 #
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 
 function errorCheck {
     local error_code="${?}"

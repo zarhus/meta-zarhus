@@ -1,7 +1,7 @@
 
-[comment]: # (SPDX-FileCopyrightText: 2022 3mdeb Embedded Systems Consulting <contact@3mdeb.com>)
+[comment]: # (SPDX-FileCopyrightText: 2024 3mdeb Embedded Systems Consulting <contact@3mdeb.com>)
 
-[comment]: # (SPDX-License-Identifier: MIT)
+[comment]: # (SPDX-License-Identifier: Apache-2.0)
 
 # Layers management
 
