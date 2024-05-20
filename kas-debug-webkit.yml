@@ -1,0 +1,18 @@
+header:
+  version: 11
+  includes:
+    - kas/common.yml
+
+repos:
+  meta-zarhus-webkit:
+    url: https://github.com/zarhus/meta-zarhus-webkit.git
+    refspec: 28ecfa8a0bb6f0d84805a9a2a11dd536c3937fb9
+
+  meta-webkit:
+    url: https://github.com/Igalia/meta-webkit.git
+    refspec: 84b47e79909804e9c43450de71eb9779a9634298
+
+distro: zarhus-distro-webkit
+machine: zarhus-machine-cm3
+target:
+  - zarhus-base-image-debug

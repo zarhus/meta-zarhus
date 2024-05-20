@@ -25,6 +25,7 @@ repos:
       meta-oe:
       meta-networking:
       meta-python:
+      meta-multimedia:
 
   meta-rockchip:
     url: https://git.yoctoproject.org/git/meta-rockchip
