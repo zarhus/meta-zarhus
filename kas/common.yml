@@ -52,8 +52,8 @@ local_conf_header:
         STOPTASKS,${DL_DIR},1G,100K \
         STOPTASKS,${SSTATE_DIR},1G,100K \
         STOPTASKS,/tmp,100M,100K \
-        <BUILD_STOP_KEYWORD>,${TMPDIR},100M,1K \
-        <BUILD_STOP_KEYWORD>,${DL_DIR},100M,1K \
-        <BUILD_STOP_KEYWORD>,${SSTATE_DIR},100M,1K \
-        <BUILD_STOP_KEYWORD>,/tmp,10M,1K"
+        HALT,${TMPDIR},100M,1K \
+        HALT,${DL_DIR},100M,1K \
+        HALT,${SSTATE_DIR},100M,1K \
+        HALT,/tmp,10M,1K"
 
