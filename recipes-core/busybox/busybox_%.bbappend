@@ -4,4 +4,4 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 # we want to keep all logs in the systemd journald
 SRC_URI:remove = " file://syslog.cfg"
 SRC_URI:append = " file://disable-klogd.cfg"
-SRC_URI:append += " file://disable-syslogd.cfg"
+SRC_URI:append = " file://disable-syslogd.cfg"
