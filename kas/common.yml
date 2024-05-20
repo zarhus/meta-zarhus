@@ -6,9 +6,7 @@ repos:
 
   meta-zarhus-bsp-rockchip:
     url: https://github.com/zarhus/meta-zarhus-bsp-rockchip.git
-    refspec: e762b36e4672bc45768537342beaa02b6eafcc0f
-    layers:
-      meta-bsp:
+    refspec: 37d03f5da1e2f2d3e0247720bb4f845903a21ed3
 
   poky:
     url: https://git.yoctoproject.org/git/poky
