@@ -135,18 +135,18 @@ damage your system!.**
 - From where you ran image build type:
 
 ```shell
-$ cd build/tmp/deploy/images/zarhus-machine
+$ cd build/tmp/deploy/images/zarhus-machine-cm3
 $ sudo umount /dev/sdx*
-$ sudo bmaptool copy --bmap zarhus-base-image-zarhus-machine.wic.bmap zarhus-base-image-zarhus-machine.wic.gz /dev/sdx
+$ sudo bmaptool copy --bmap zarhus-base-image-zarhus-machine-cm3.wic.bmap zarhus-base-image-zarhus-machine-cm3.wic.gz /dev/sdx
 ```
 
 and you should see output similar to this (the exact size number may differ):
 
 ```shell
-zarhus-base-image-zarhus-machine.wic.bmap zarhus-base-image-zarhus-machine.wic.gz /dev/sdx
+zarhus-base-image-zarhus-machine-cm3.wic.bmap zarhus-base-image-zarhus-machine-cm3.wic.gz /dev/sdx
 bmaptool: info: block map format version 2.0
 bmaptool: info: 74650 blocks of size 4096 (291.6 MiB), mapped 42052 blocks (164.3 MiB or 56.3%)
-bmaptool: info: copying image 'zarhus-base-image-zarhus-machine.wic.gz' to block device '/dev/sdx' using bmap file 'zarhus-base-image-zarhus-machine.wic.bmap'
+bmaptool: info: copying image 'zarhus-base-image-zarhus-machine-cm3.wic.gz' to block device '/dev/sdx' using bmap file 'zarhus-base-image-zarhus-machine-cm3.wic.bmap'
 bmaptool: WARNING: failed to enable I/O optimization, expect suboptimal speed (reason: cannot switch to the 'noop' I/O scheduler: [Errno 22] Invalid argument)
 bmaptool: info: 100% copied
 bmaptool: info: synchronizing '/dev/sdx'

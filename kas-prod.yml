@@ -4,6 +4,6 @@ header:
     - kas/common.yml
 
 distro: zarhus-distro
-machine: zarhus-machine
+machine: zarhus-machine-cm3
 target:
   - zarhus-base-image
