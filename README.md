@@ -37,13 +37,13 @@ sudo apt install bmap-tools
 Depending on which version of build you want to run, replace `kas-debug.yml`
 with desired `.yml` file.
 
-- From `yocto` directory run:
+* From `yocto` directory run:
 
 ```shell
 $ SHELL=/bin/bash kas-container build meta-zarhus/kas-debug.yml
 ```
 
-- Image build takes time, so be patient and after build's finish you should see
+* Image build takes time, so be patient and after build's finish you should see
 something similar to (the exact tasks numbers may differ):
 
 ```shell
@@ -90,7 +90,7 @@ Host github.com
     IdentitiesOnly yes
 ```
 
-- From `yocto` directory run:
+* From `yocto` directory run:
 
 ```shell
 $ SHELL=/bin/bash kas-container --ssh-dir ~/ssh-keys build meta-zarhus/kas-debug.yml
@@ -99,11 +99,11 @@ $ SHELL=/bin/bash kas-container --ssh-dir ~/ssh-keys build meta-zarhus/kas-debug
 ## Enter docker shell
 
 Some Yocto related work may need to use bitbake environment. The easiest way to
-achive that is to start `kas-container` in shell mode. Depending on which
+achieve that is to start `kas-container` in shell mode. Depending on which
 version of build you want to use, replace `kas-debug.yml` with desired `.yml`
 file.
 
-- From `yocto` directory run:
+* From `yocto` directory run:
 
 ```shell
 $ SHELL=/bin/bash kas-container shell meta-3mdeb/kas-debug.yml
@@ -113,7 +113,7 @@ $ SHELL=/bin/bash kas-container shell meta-3mdeb/kas-debug.yml
 
 This section assumes that image can be flashed on SD card.
 
-- Find out your device name:
+* Find out your device name:
 
 ```shell
 $ fdisk -l
@@ -132,7 +132,7 @@ in this case the device name is `/dev/sdx` **but be aware, in next steps
 replace `/dev/sdx` with right device name on your platform or else you can
 damage your system!.**
 
-- From where you ran image build type:
+* From where you ran image build type:
 
 ```shell
 $ cd build/tmp/deploy/images/zarhus-machine-cm3
@@ -153,4 +153,4 @@ bmaptool: info: synchronizing '/dev/sdx'
 bmaptool: info: copying time: 11.0s, copying speed 15.0 MiB/sec
 ```
 
-- Boot the platform
+* Boot the platform

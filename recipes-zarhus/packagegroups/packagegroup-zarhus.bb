@@ -6,11 +6,11 @@ LICENSE = "MIT"
 inherit packagegroup
 
 PACKAGES = " \
-  ${PN}-system \
+    ${PN}-system \
 "
 
 RDEPENDS:${PN}-system = " \
-  packagegroup-core-base-utils \
-  chrony \
-  chronyc \
+    packagegroup-core-base-utils \
+    chrony \
+    chronyc \
 "
