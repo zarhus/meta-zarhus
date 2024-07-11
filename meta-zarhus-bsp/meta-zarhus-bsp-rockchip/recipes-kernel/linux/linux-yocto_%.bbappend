@@ -15,6 +15,7 @@ SRC_URI:append = " \
     file://disable-nfs.cfg \
     file://enable-cmdline-bool.cfg \
     file://enable-debug-stackoverflow.cfg \
+    file://0001-rk356x.dtsi-add-optee-firmware-entry.patch \
 "
 
 SRC_URI:append = " \

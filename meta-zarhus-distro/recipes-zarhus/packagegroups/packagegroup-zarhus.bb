@@ -11,6 +11,7 @@ PACKAGES = " \
     ${PN}-system \
     ${PN}-dbg \
     ${PN}-alsa \
+    ${PN}-security \
 "
 
 RDEPENDS:${PN}-system = " \
@@ -44,4 +45,11 @@ RDEPENDS:${PN}-alsa = " \
     gettext \
     dialog \
     ncurses \
+"
+
+RDEPENDS:${PN}-security = " \
+    libp11 \
+    opensc \
+    openssl \
+    optee-client \
 "
