@@ -3,6 +3,8 @@ DESCRIPTION = "zarhus packagegroup"
 
 LICENSE = "MIT"
 
+PACKAGE_ARCH = "${TUNE_PKGARCH}"
+
 inherit packagegroup
 
 PACKAGES = " \
@@ -18,4 +20,7 @@ RDEPENDS:${PN}-system = " \
 
 RDEPENDS:${PN}-dbg = " \
     gzip \
+    libgpiod \
+    libgpiod-tools \
+    devmem2 \
 "
