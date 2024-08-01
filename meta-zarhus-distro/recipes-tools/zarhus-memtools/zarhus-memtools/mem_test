@@ -1,0 +1,101 @@
+#!/bin/bash
+
+trap cleanup SIGINT SIGTERM ERR
+
+usage() {
+  cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] COMMAND [TIME] [TIMEOUT]
+
+Measure memory usage while running a process.
+
+Arguments:
+COMMAND    Command to run
+TIME       How long the process should run
+TIMEOUT    Timeout between running the process and the start of memory measurement
+
+Options:
+-h, --help Print this help and exit
+EOF
+}
+
+parse_params() {
+  while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+    -h | --help) usage && exit ;;
+    -?*) usage && exit 1 ;;
+    *)
+      if [ -z "$COMMAND" ]; then
+          COMMAND="$1"
+      elif [ -z "$TIME" ]; then
+          TIME="$1"
+      elif [ -z "$TIMEOUT" ]; then
+          TIMEOUT="$1"
+      else
+          echo "Unexpected argument: $1"
+          usage
+          exit 1
+      fi
+      ;;
+    esac
+    shift
+  done
+  TIME=${TIME:-120}
+  TIMEOUT=${TIMEOUT:-0}
+}
+
+cleanup(){
+  if [[ -n $VIRTUAL_ENV ]]; then
+    deactivate 2>/dev/null
+  fi
+  exit
+}
+
+parse_params "$@"
+
+MEM_USAGE=$(which mem_usage)
+
+PYTHON_CMD=$(which python3)
+
+PYTHON_REQUIREMENTS=("matplotlib")
+
+if [ -z "$PYTHON_CMD" ]; then
+    PYTHON_CMD=$(which python)
+fi
+
+activate_venv(){
+  if ! [ -d venv ]; then
+    echo "Installing virtual environment"
+    $PYTHON_CMD -m venv venv
+  fi
+
+  source venv/bin/activate
+
+  if [ -z "$VIRTUAL_ENV" ]; then
+    echo "Virtual environment not activated."
+    cleanup 1
+  fi
+
+# Use python3 from venv
+  python3 -m ensurepip --upgrade
+  for r in "${PYTHON_REQUIREMENTS[@]}"; do
+    pip install $r
+  done
+}
+
+echo "Running command: $COMMAND"
+$COMMAND &
+pid=$!
+sleep $TIMEOUT
+echo "Measuring memory usage for ${TIME} seconds."
+$MEM_USAGE &
+pid_mem=$!
+sleep $TIME
+
+kill $pid_mem
+kill $pid
+
+activate_venv
+
+plot_mem_usage.py mem.csv --no-swap
+
+cleanup 0
