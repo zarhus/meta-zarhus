@@ -26,6 +26,10 @@ RDEPENDS:${PN}-dbg = " \
     libgpiod-tools \
     devmem2 \
     libdrm-tests \
+    zarhus-memtools \
+    python3 \
+    heaptrack \
+    gdb \
 "
 
 # FIXME:
