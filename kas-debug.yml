@@ -2,9 +2,8 @@
 header:
   version: 11
   includes:
-    - kas/common.yml
+    - kas-prod.yml
+    - kas/debug.yml
 
-distro: zarhus-distro
-machine: zarhus-machine-cm3
 target:
   - zarhus-base-image-debug
