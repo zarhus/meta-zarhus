@@ -1,11 +1,11 @@
 PACKAGES += " \
-  ${PN}-webkit \
+    ${PN}-webkit \
 "
 
 RDEPENDS:${PN}-webkit = " \
-  weston \
-  packagegroup-core-weston \
-  weston-init \
-  wayland \
-  cog \
+    weston \
+    packagegroup-core-weston \
+    weston-init \
+    wayland \
+    cog \
 "
