@@ -4,10 +4,9 @@ header:
 
 repos:
   meta-zarhus:
-
-  meta-zarhus-bsp-rockchip:
-    url: https://github.com/zarhus/meta-zarhus-bsp-rockchip.git
-    refspec: 37d03f5da1e2f2d3e0247720bb4f845903a21ed3
+  layers:
+    meta-zarhus-distro:
+    meta-zarhus-bsp-rockchip:
 
   poky:
     url: https://git.yoctoproject.org/git/poky
