@@ -4,9 +4,9 @@ header:
 
 repos:
   meta-zarhus:
-  layers:
-    meta-zarhus-distro:
-    meta-zarhus-bsp-rockchip:
+    layers:
+      meta-zarhus-distro:
+      meta-zarhus-bsp-rockchip:
 
   poky:
     url: https://git.yoctoproject.org/git/poky
