@@ -14,7 +14,8 @@ repos:
 
   poky:
     url: https://git.yoctoproject.org/git/poky
-    refspec: eb723d4a1082b10d14554f799c6c31cee620152d
+    # scarthgap-5.0.2
+    refspec: f7def85be9f99dcb4ba488bead201f670304379b
     layers:
       meta:
       meta-poky:
@@ -22,7 +23,7 @@ repos:
 
   meta-openembedded:
     url: https://git.openembedded.org/meta-openembedded
-    refspec: 6819f825caf750b4deac5d8dda1b81f3380615be
+    refspec: 2338409efc51cf2022ff5610a9fb689251706e2b
     layers:
       meta-oe:
       meta-networking:

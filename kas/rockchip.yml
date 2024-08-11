@@ -13,7 +13,7 @@ repos:
 
   meta-arm:
     url: https://git.yoctoproject.org/git/meta-arm
-    refspec: 6e9525115bd45c86e241d62a4af069f7b1b8b973
+    refspec: 38bce82e42ea093333a53c4a10e51d1b26cbc989
     layers:
       meta-arm:
       meta-arm-toolchain:
