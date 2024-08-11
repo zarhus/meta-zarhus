@@ -17,6 +17,7 @@ SRC_URI:append = " \
     file://enable-debug-stackoverflow.cfg \
     file://0001-rk356x.dtsi-reserve-optee-memory.patch \
     file://orangepi-cm4-dts.patch \
+    file://0001-rk356x.dtsi-reserve-optee-memory.patch \
 "
 
 COMPATIBLE_MACHINE:zarhus-machine-cm3 = "zarhus-machine-cm3"
