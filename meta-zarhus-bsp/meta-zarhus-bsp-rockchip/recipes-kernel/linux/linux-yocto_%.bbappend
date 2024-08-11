@@ -15,6 +15,9 @@ SRC_URI:append = " \
     file://disable-nfs.cfg \
     file://enable-cmdline-bool.cfg \
     file://enable-debug-stackoverflow.cfg \
+    file://0001-rk356x.dtsi-reserve-optee-memory.patch \
+    file://orangepi-cm4-dts.patch \
 "
 
 COMPATIBLE_MACHINE:zarhus-machine-cm3 = "zarhus-machine-cm3"
+COMPATIBLE_MACHINE:orangepi-cm4= "orangepi-cm4"
