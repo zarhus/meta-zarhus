@@ -10,6 +10,7 @@ inherit packagegroup
 PACKAGES = " \
     ${PN}-system \
     ${PN}-dbg \
+    ${PN}-alsa \
 "
 
 RDEPENDS:${PN}-system = " \
@@ -23,4 +24,23 @@ RDEPENDS:${PN}-dbg = " \
     libgpiod \
     libgpiod-tools \
     devmem2 \
+"
+
+# FIXME:
+# 1. Do we need all of these?
+# 2. Apparently, alsa-mixer needed the dialog and ncurses, if that is the case,
+# it should be fixed in the upstream alsa recipe.
+
+RDEPENDS:${PN}-alsa = " \
+    packagegroup-base-alsa \
+    alsa-utils-speakertest \
+    alsa-utils \
+    alsa-plugins \
+    alsa-lib \
+    alsa-tools \
+    libasound \
+    mpg123 \
+    gettext \
+    dialog \
+    ncurses \
 "
