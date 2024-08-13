@@ -1,0 +1,19 @@
+---
+header:
+  version: 11
+
+repos:
+  meta-zarhus:
+    layers:
+      meta-zarhus-bsp/meta-zarhus-bsp-rockchip:
+
+  meta-rockchip:
+    url: https://git.yoctoproject.org/git/meta-rockchip
+    refspec: 88f2064ca2b83b42a7c8a59616ab80b763ef2485
+
+  meta-arm:
+    url: https://git.yoctoproject.org/git/meta-arm
+    refspec: 6e9525115bd45c86e241d62a4af069f7b1b8b973
+    layers:
+      meta-arm:
+      meta-arm-toolchain:
