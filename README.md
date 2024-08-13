@@ -34,13 +34,14 @@ script downloaded and available in [PATH](https://en.wikipedia.org/wiki/PATH_(va
 
 ## Build
 
-Depending on which version of build you want to run, replace `kas-debug.yml`
-with desired `.yml` file.
+Depending on which features you want to have in your build, pass the desired
+`.yml` files via command line. You can read more on that in
+[kas documentation](https://kas.readthedocs.io/en/latest/userguide/project-configuration.html#including-configuration-files-via-the-command-line)
 
 * From `yocto` directory run:
 
   ```shell
-  SHELL=/bin/bash kas-container build meta-zarhus/kas-debug.yml
+  SHELL=/bin/bash kas-container build meta-zarhus/kas/common.yml:meta-zarhus/kas/rockchip.yml
   ```
 
 * Image build takes time, so be patient and after build's finish you should see
