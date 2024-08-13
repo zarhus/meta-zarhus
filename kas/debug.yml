@@ -2,6 +2,9 @@
 header:
   version: 11
 
+target:
+  - zarhus-base-image-debug
+
 local_conf_header:
   override: |
     OVERRIDES:append = ":dbg"
