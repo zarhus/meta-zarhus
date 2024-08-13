@@ -3,6 +3,8 @@ From: Maciej Pijanowski <maciej.pijanowski@3mdeb.com>
 Date: Sun, 11 Aug 2024 09:59:48 +0200
 Subject: [PATCH] orangepi-cm4-base-rk3566_defconfig: copy from  linux tree
 
+Upstream-Status: Pending
+
 Signed-off-by: Maciej Pijanowski <maciej.pijanowski@3mdeb.com>
 ---
  arch/arm/dts/Makefile                         |   1 +

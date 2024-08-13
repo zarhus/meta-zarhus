@@ -1,3 +1,6 @@
+
+Upstream-Status: Pending
+
 diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
 index e7728007fd1b..e2ffcd30bc06 100644
 --- a/arch/arm64/boot/dts/rockchip/Makefile
