@@ -29,3 +29,4 @@ do_configure:append() {
 }
 
 COMPATIBLE_MACHINE:orangepi-cm4 = "orangepi-cm4"
+COMPATIBLE_MACHINE:quartz64-a = "quartz64-a"
