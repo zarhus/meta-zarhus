@@ -24,6 +24,7 @@ RDEPENDS:${PN}-dbg = " \
     libgpiod \
     libgpiod-tools \
     devmem2 \
+    libdrm-tests \
 "
 
 # FIXME:
