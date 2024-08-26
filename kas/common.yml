@@ -11,6 +11,7 @@ repos:
   meta-zarhus:
     layers:
       meta-zarhus-distro:
+      meta-zarhus-bsp/meta-zarhus-bsp-common:
 
   poky:
     url: https://git.yoctoproject.org/git/poky
