@@ -17,4 +17,15 @@ SRC_URI:append = " \
     file://enable-debug-stackoverflow.cfg \
 "
 
-COMPATIBLE_MACHINE:zarhus-machine-cm3 = "zarhus-machine-cm3"
+SRC_URI:append = " \
+    file://rk3566-orangepi-cm4.dtsi \
+    file://rk3566-orangepi-cm4-base.dts \
+"
+
+do_configure:append() {
+    install -m 644 "${WORKDIR}/rk3566-orangepi-cm4-base.dts" "${S}/${DTS_DIR}"
+    install -m 644 "${WORKDIR}/rk3566-orangepi-cm4.dtsi" "${S}/${DTS_DIR}"
+    echo 'dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-orangepi-cm4.dtb' >> "${S}/${DTS_DIR}/Makefile"
+}
+
+COMPATIBLE_MACHINE:orangepi-cm4 = "orangepi-cm4"
