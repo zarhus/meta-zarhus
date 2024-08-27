@@ -33,7 +33,6 @@ RDEPENDS:${PN}-dbg = " \
 # it should be fixed in the upstream alsa recipe.
 
 RDEPENDS:${PN}-alsa = " \
-    packagegroup-base-alsa \
     alsa-utils-speakertest \
     alsa-utils \
     alsa-plugins \
