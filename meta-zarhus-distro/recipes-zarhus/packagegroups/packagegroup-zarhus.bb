@@ -17,6 +17,7 @@ RDEPENDS:${PN}-system = " \
     packagegroup-core-base-utils \
     chrony \
     chronyc \
+    curl \
 "
 
 RDEPENDS:${PN}-dbg = " \
