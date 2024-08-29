@@ -12,7 +12,7 @@ GO_IMPORT = "github.com/zarhus/device-controller"
 GO_SRC = "${S}/src/${GO_IMPORT}"
 
 SRC_URI = "git://${GO_IMPORT}.git;branch=${BRANCH};protocol=ssh"
-BRANCH = "device-controller"
+BRANCH = "main"
 SRCREV = "3a2c6816396d901fdf1b72c1e507d7041ed73c70"
 
 FILES:${PN} += "/usr/local/bin ${CONTROLLER_CONFIG_DIR}"
