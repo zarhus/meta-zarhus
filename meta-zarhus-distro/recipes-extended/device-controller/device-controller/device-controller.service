@@ -1,0 +1,14 @@
+[Unit]
+Description=Device controller
+After=network.target
+Wants=network-online.target
+
+[Service]
+Restart=always
+RestartSec=2
+Type=simple
+ExecStart=device-controller
+Environment=
+
+[Install]
+WantedBy=multi-user.target
