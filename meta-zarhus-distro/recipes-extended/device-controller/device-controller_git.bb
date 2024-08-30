@@ -11,13 +11,19 @@ GO_EXTRA_LDFLAGS = "-X main.configDirPath=${CONTROLLER_CONFIG_DIR}"
 GO_IMPORT = "github.com/zarhus/device-controller"
 GO_SRC = "${S}/src/${GO_IMPORT}"
 
-SRC_URI = "git://${GO_IMPORT}.git;branch=${BRANCH};protocol=ssh"
+SRC_URI = " \
+            git://${GO_IMPORT}.git;branch=${BRANCH};protocol=ssh \
+            file://device-controller.service \
+            "
 BRANCH = "main"
 SRCREV = "3a2c6816396d901fdf1b72c1e507d7041ed73c70"
 
 FILES:${PN} += "/usr/local/bin ${CONTROLLER_CONFIG_DIR}"
 
-inherit go-mod
+inherit systemd go-mod
+
+SYSTEMD_AUTO_ENABLE = "disable"
+SYSTEMD_SERVICE:${PN} = "device-controller.service"
 
 do_compile:prepend() {
     oe_runmake prepare
@@ -26,4 +32,5 @@ do_compile:prepend() {
 do_install:append() {
     install -d "${D}${CONTROLLER_CONFIG_DIR}"
     install -m 0644 "${GO_SRC}/config/"* "${D}/${CONTROLLER_CONFIG_DIR}/"
+    install -D -m 0644 "${WORKDIR}/device-controller.service" "${D}${systemd_system_unitdir}/device-controller.service"
 }
