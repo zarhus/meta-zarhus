@@ -1,0 +1,3 @@
+MACHINE_OPTEE_OS_REQUIRE:rk3566 = "optee-os-rk3566.inc"
+
+require ${MACHINE_OPTEE_OS_REQUIRE}
