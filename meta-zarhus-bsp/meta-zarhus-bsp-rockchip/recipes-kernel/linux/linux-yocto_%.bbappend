@@ -16,6 +16,7 @@ SRC_URI:append = " \
     file://enable-cmdline-bool.cfg \
     file://enable-debug-stackoverflow.cfg \
     file://0001-rk356x.dtsi-add-optee-firmware-entry.patch \
+    file://0001-rk356x.dtsi-reserve-optee-memory.patch \
 "
 
 SRC_URI:append = " \

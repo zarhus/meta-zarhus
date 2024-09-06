@@ -1,8 +1,10 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 EXTRA_OEMAKE:append:rk3566 = " \
         BL31=${DEPLOY_DIR_IMAGE}/bl31-rk3566.elf \
         ROCKCHIP_TPL=${DEPLOY_DIR_IMAGE}/ddr-rk3566.bin \
+        TEE=${DEPLOY_DIR_IMAGE}/tee2.elf \
 "
 INIT_FIRMWARE_DEPENDS:rk3566 = " rockchip-rkbin:do_deploy"
 do_compile[depends] += "${INIT_FIRMWARE_DEPENDS}"
@@ -12,6 +14,7 @@ SRC_URI:append = " \
     file://rk3566-orangepi-cm4-base.dts \
     file://rk3566-orangepi-cm4-base-u-boot.dtsi \
     file://rk3566-orangepi-cm4.dtsi \
+    file://enable-optee.cfg \
     "
 
 do_configure:prepend() {
