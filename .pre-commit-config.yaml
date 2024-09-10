@@ -67,6 +67,7 @@ repos:
 
 ci:
   autoupdate_commit_msg: 'pre-commit: autoupdate hooks'
+  autoupdate_branch: develop
   autofix_prs: false
   # docker is not supported on pre-commit.ci
   skip: [shellcheck]
