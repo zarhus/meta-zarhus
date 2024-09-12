@@ -27,6 +27,7 @@ RDEPENDS:${PN}-dbg = " \
     libgpiod-tools \
     devmem2 \
     libdrm-tests \
+    optee-test \
 "
 
 # FIXME:
@@ -51,5 +52,6 @@ RDEPENDS:${PN}-security = " \
     libp11 \
     opensc \
     openssl \
+    optee-os-ta \
     optee-client \
 "

@@ -31,4 +31,5 @@ do_configure:append() {
 }
 
 COMPATIBLE_MACHINE:orangepi-cm4 = "orangepi-cm4"
-COMPATIBLE_MACHINE:zarhus-machine-cm3 = "zarhus-machine-cm3"
+COMPATIBLE_MACHINE:radxa-cm3 = "radxa-cm3"
+COMPATIBLE_MACHINE:quartz64-a = "quartz64-a"
