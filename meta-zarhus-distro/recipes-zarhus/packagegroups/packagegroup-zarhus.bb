@@ -31,6 +31,7 @@ RDEPENDS:${PN}-dbg = " \
     python3 \
     heaptrack \
     gdb \
+    optee-test \
 "
 
 # FIXME:
@@ -55,5 +56,6 @@ RDEPENDS:${PN}-security = " \
     libp11 \
     opensc \
     openssl \
+    optee-os-ta \
     optee-client \
 "
