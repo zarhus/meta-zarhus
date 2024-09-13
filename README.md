@@ -63,7 +63,7 @@ to use the `--ssh-dir <ssh_keys_directory>` option.
 
 It's important to use keys that don't have password (are not encrypted)!
 
-The contents of the `~/ssh-keys` can look like:
+The contents of the `<ssh_keys_directory>` can look like:
 
 ```shell
 config
@@ -73,7 +73,7 @@ gitlab_key_ro
 gitlab_key_ro.pub
 ```
 
-And the `~/ssh-keys/config` file:
+And the `<ssh_keys_directory>/config` file:
 
 ```shell
 Host gitlab.com
@@ -91,10 +91,14 @@ Host github.com
     IdentitiesOnly yes
 ```
 
-* From `yocto` directory run:
+It's important to have paths in `IdentityFile` in format `~/.ssh/<path/to/key>`
+as `kas-container` mounts `<ssh_keys_directory>` as `.ssh` folder inside
+container.
+
+From `yocto` directory run:
 
   ```shell
-  $ SHELL=/bin/bash kas-container --ssh-dir ~/ssh-keys build meta-zarhus/kas-debug.yml
+  $ SHELL=/bin/bash kas-container --ssh-dir <ssh_keys_directory> build meta-zarhus/kas-debug.yml
   ```
 
 ## Enter docker shell
