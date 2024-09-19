@@ -15,6 +15,8 @@ SRC_URI:append = " \
     file://disable-nfs.cfg \
     file://enable-cmdline-bool.cfg \
     file://enable-debug-stackoverflow.cfg \
+    file://0001-rk356x.dtsi-reserve-optee-memory.patch \
+    file://0001-rk356x.dtsi-add-optee-firmware-entry.patch \
 "
 
 SRC_URI:append = " \
@@ -29,4 +31,5 @@ do_configure:append() {
 }
 
 COMPATIBLE_MACHINE:orangepi-cm4 = "orangepi-cm4"
-COMPATIBLE_MACHINE:zarhus-machine-cm3 = "zarhus-machine-cm3"
+COMPATIBLE_MACHINE:radxa-cm3 = "radxa-cm3"
+COMPATIBLE_MACHINE:quartz64-a = "quartz64-a"

@@ -11,6 +11,7 @@ PACKAGES = " \
     ${PN}-system \
     ${PN}-dbg \
     ${PN}-alsa \
+    ${PN}-security \
 "
 
 RDEPENDS:${PN}-system = " \
@@ -26,6 +27,7 @@ RDEPENDS:${PN}-dbg = " \
     libgpiod-tools \
     devmem2 \
     libdrm-tests \
+    optee-test \
 "
 
 # FIXME:
@@ -44,4 +46,12 @@ RDEPENDS:${PN}-alsa = " \
     gettext \
     dialog \
     ncurses \
+"
+
+RDEPENDS:${PN}-security = " \
+    libp11 \
+    opensc \
+    openssl \
+    optee-os-ta \
+    optee-client \
 "

@@ -3,7 +3,7 @@ header:
   version: 11
 
 distro: zarhus-distro
-machine: zarhus-machine-cm3
+machine: quartz64-a
 target:
   - zarhus-base-image
 
@@ -40,6 +40,8 @@ local_conf_header:
     CONF_VERSION = "2"
     PACKAGE_CLASSES = "package_rpm"
     SDKMACHINE = "x86_64"
+    BB_NUMBER_THREADS = "6"
+    PARALLEL_MAKE = "-j 2"
   diskmon: |
     BB_DISKMON_DIRS = "\
         STOPTASKS,${TMPDIR},1G,100K \
