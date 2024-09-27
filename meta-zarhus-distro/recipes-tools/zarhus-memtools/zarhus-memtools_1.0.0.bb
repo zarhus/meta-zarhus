@@ -1,4 +1,8 @@
 SUMMARY = "Tools for measuring and analyzing memory usage of a process"
+DESCRIPTION = " \
+    Tools that measure and plot the memory usage while running \
+    a process. Useful for detecting memory leaks. \
+    "
 HOMEPAGE = "https://docs.zarhus.com"
 
 LICENSE = "MIT"
