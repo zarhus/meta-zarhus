@@ -2,9 +2,9 @@
 
 echo "Timestamp,RAM usage,Swap memory usage" > mem.csv
 while true; do
-timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-used_mem=$(free | grep Mem | awk '{print $3}')
-used_swap=$(free | grep Swap | awk '{print $3}')
-echo "$timestamp,$used_mem,$used_swap" >> mem.csv
-sleep 1
+  timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+  used_mem=$(free | grep Mem | awk '{print $3}')
+  used_swap=$(free | grep Swap | awk '{print $3}')
+  echo "$timestamp,$used_mem,$used_swap" >> mem.csv
+  sleep 1
 done
