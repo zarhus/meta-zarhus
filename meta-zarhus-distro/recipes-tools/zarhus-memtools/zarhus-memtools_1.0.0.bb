@@ -25,4 +25,4 @@ FILES:${PN} += " \
     ${bindir}/plot_mem_usage.py \
     "
 
-RDEPENDS:${PN} += "bash"
+RDEPENDS:${PN} += "bash python3 python3-matplotlib python3-numpy"

@@ -56,31 +56,9 @@ MEM_USAGE=$(which mem_usage)
 
 PYTHON_CMD=$(which python3)
 
-PYTHON_REQUIREMENTS=("matplotlib")
-
 if [ -z "$PYTHON_CMD" ]; then
     PYTHON_CMD=$(which python)
 fi
-
-activate_venv(){
-  if ! [ -d venv ]; then
-    echo "Installing virtual environment"
-    $PYTHON_CMD -m venv venv
-  fi
-
-  source venv/bin/activate
-
-  if [ -z "$VIRTUAL_ENV" ]; then
-    echo "Virtual environment not activated."
-    cleanup 1
-  fi
-
-# Use python3 from venv
-  python3 -m ensurepip --upgrade
-  for r in "${PYTHON_REQUIREMENTS[@]}"; do
-    pip install $r
-  done
-}
 
 echo "Running command: $COMMAND"
 $COMMAND &
@@ -93,8 +71,6 @@ sleep $TIME
 
 kill $pid_mem
 kill $pid
-
-activate_venv
 
 plot_mem_usage.py mem.csv --no-swap
 
