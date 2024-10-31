@@ -1,6 +1,5 @@
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    listen 127.0.0.1:80 default_server;
 
     root /var/www/localhost/html;
 
