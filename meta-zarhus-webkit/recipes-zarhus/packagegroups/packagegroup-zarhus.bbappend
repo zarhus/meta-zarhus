@@ -1,5 +1,6 @@
 PACKAGES += " \
     ${PN}-webkit \
+    ${PN}-net \
 "
 
 RDEPENDS:${PN}-webkit = " \
@@ -8,4 +9,7 @@ RDEPENDS:${PN}-webkit = " \
     weston-init \
     wayland \
     cog \
+"
+RDEPENDS:${PN}-net = " \
+    nginx \
 "
