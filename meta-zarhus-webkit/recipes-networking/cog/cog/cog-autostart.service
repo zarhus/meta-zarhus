@@ -6,7 +6,7 @@ After=nginx.service weston.service
 Restart=always
 RestartSec=2
 Type=simple
-Environment=XDG_SESSION_TYPE=tty WAYLAND_DISPLAY=/run/wayland-0 XDG_SESSION_CLASS=user XDG_SESSION_ID=c2 XDG_RUNTIME_DIR=/run/user/ COG_PLATFORM_WL_VIEW_WIDTH="1920" COG_PLATFORM_WL_VIEW_HEIGHT="1080"
+Environment=WAYLAND_DISPLAY=/run/wayland-0 COG_PLATFORM_WL_VIEW_WIDTH="60" COG_PLATFORM_WL_VIEW_HEIGHT="70"
 ExecStart=cog http://localhost:80
 
 [Install]
