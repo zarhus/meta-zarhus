@@ -1,0 +1,10 @@
+---
+header:
+  version: 11
+
+machine: qemuarm-uboot
+
+repos:
+  meta-zarhus:
+    layers:
+      meta-zarhus-bsp/meta-zarhus-bsp-qemuarm:
