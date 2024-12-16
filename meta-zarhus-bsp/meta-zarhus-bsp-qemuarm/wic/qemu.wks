@@ -1,0 +1,10 @@
+part v_storage --offset 7168s  --fixed-size 256K  --fstype=none --part-name v_storage
+part reserved  --offset 7680s  --fixed-size 192K  --fstype=none --part-name reserved
+part reserved1 --offset 8064s  --fixed-size 32K   --fstype=none --part-name reserved1
+part uboot_env --offset 8128s  --fixed-size 32K   --fstype=none --part-name uboot_env
+part reserved2 --offset 8192s  --fixed-size 4096K --fstype=none --part-name reserved2
+part loader2   --offset 16384s --fixed-size 4096K --fstype=none --part-name loader2   --source rawcopy --sourceparams="file=u-boot.bin"
+part atf       --offset 24576s --fixed-size 4096K --fstype=none --part-name atf
+part /         --label root    --active           --fstype=ext4 --part-name root      --source rootfs
+
+bootloader --ptable gpt
