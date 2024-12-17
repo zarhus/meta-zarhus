@@ -1,0 +1,16 @@
+[Unit]
+Description=Generate TLS keys used for Weston RDP connection
+Before=weston.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/mkdir -p /etc/freerdp/keys
+ExecStart=/usr/bin/openssl genrsa -out /etc/freerdp/keys/tls.key 2048
+ExecStart=/usr/bin/openssl req -new -key /etc/freerdp/keys/tls.key -out /etc/freerdp/keys/tls.csr -subj "/CN=rdp"
+ExecStart=/usr/bin/openssl x509 -req -days 365 -signkey /etc/freerdp/keys/tls.key -in /etc/freerdp/keys/tls.csr -out /etc/freerdp/keys/tls.crt
+ExecStart=/usr/bin/chmod 644 /etc/freerdp/keys/tls.key
+ExecStart=/usr/bin/systemctl disable generate-rdp-tls-keys.service
+
+[Install]
+WantedBy=weston.service
