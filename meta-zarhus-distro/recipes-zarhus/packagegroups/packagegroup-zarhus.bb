@@ -11,6 +11,7 @@ PACKAGES = " \
     ${PN}-system \
     ${PN}-dbg \
     ${PN}-alsa \
+    ${PN}-security \
 "
 
 RDEPENDS:${PN}-system = " \
@@ -30,6 +31,7 @@ RDEPENDS:${PN}-dbg = " \
     python3 \
     heaptrack \
     gdb \
+    optee-test \
 "
 
 # FIXME:
@@ -48,4 +50,12 @@ RDEPENDS:${PN}-alsa = " \
     gettext \
     dialog \
     ncurses \
+"
+
+RDEPENDS:${PN}-security = " \
+    libp11 \
+    opensc \
+    openssl \
+    optee-os-ta \
+    optee-client \
 "
