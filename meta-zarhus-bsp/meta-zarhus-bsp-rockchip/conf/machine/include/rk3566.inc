@@ -15,7 +15,7 @@ KERNEL_CLASSES = "kernel-fitimage"
 KERNEL_IMAGETYPE ?= "fitImage"
 
 PREFERRED_PROVIDER:trusted-firmware-a = "rockchip-rkbin"
-PREFERRED_PROVIDER:optee-os = "rockchip-rkbin"
+PREFERRED_PROVIDER:optee-os = "optee-os"
 
 UBOOT_SUFFIX ?= "itb"
 UBOOT_ENTRYPOINT ?= "0x06000000"

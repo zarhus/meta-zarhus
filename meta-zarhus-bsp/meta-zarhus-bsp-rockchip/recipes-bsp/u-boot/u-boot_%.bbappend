@@ -6,7 +6,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 EXTRA_OEMAKE:append:rk3566 = " \
         BL31=${DEPLOY_DIR_IMAGE}/bl31-rk3566.elf \
         ROCKCHIP_TPL=${DEPLOY_DIR_IMAGE}/ddr-rk3566.bin \
-        TEE=${DEPLOY_DIR_IMAGE}/optee/tee.elf \
+        TEE=${DEPLOY_DIR_IMAGE}/optee/tee2.elf \
 "
 INIT_FIRMWARE_DEPENDS:rk3566 = " rockchip-rkbin:do_deploy"
 do_compile[depends] += "${INIT_FIRMWARE_DEPENDS}"
