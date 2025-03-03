@@ -58,4 +58,5 @@ RDEPENDS:${PN}-security = " \
     openssl \
     optee-os-ta \
     optee-client \
+    mbedtls-services \
 "
