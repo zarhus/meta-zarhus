@@ -5,4 +5,5 @@ IMAGE_FEATURES += "debug-tweaks"
 IMAGE_INSTALL:append = " \
     packagegroup-zarhus-dbg \
     packagegroup-core-buildessential \
+    optee-os-tadevkit \
 "
