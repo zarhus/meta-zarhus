@@ -15,14 +15,12 @@ SRC_URI:append = " \
     file://disable-nfs.cfg \
     file://enable-cmdline-bool.cfg \
     file://enable-debug-stackoverflow.cfg \
-    file://0001-rk356x.dtsi-reserve-optee-memory.patch \
-    file://0001-rk356x.dtsi-add-optee-firmware-entry.patch \
-    file://quartz64a.cfg \
-"
-
-SRC_URI:append = " \
     file://rk3566-orangepi-cm4.dtsi \
     file://rk3566-orangepi-cm4-base.dts \
+"
+
+SRC_URI:append:quartz64-a = " \
+    file://quartz64a.cfg \
 "
 
 do_configure:append() {
