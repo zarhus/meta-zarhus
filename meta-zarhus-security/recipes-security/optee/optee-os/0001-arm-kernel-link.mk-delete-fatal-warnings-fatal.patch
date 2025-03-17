@@ -1,0 +1,46 @@
+From 5fff15d1ca1e96fef0d1a122f1ffaaca11445a85 Mon Sep 17 00:00:00 2001
+From: Daniil Klimuk <daniil.klimuk@3mdeb.com>
+Date: Thu, 23 Jan 2025 10:46:56 +0100
+Subject: [PATCH] arm: kernel: link.mk delete --fatal-warnings fatal
+
+This flag cause build to fail on any warning. In case of RK3566 build
+on version 3.13.0 using latest GCC version there is only one warning:
+
+aarch64-zarhus-linux-ld.bfd: warning: /build/tmp/work/test_machine-zarhus-linux/optee-os-tadevkit/4.1.0/build/core/tee.elf has a LOAD segment with RWX permissions
+
+And it causes entire build to fail.
+
+In case of RK3566 build it is better to skip this warning by deleting
+the flag. Why:
+* In case of RK3566 build the tee.elf from optee-os package that causes
+  the warning is not being used in final image. The binary from
+  rockchip-rkbin is being used instead.
+* If the tee.elf will be compiled with older versions of the GCC
+  toolchain (where the warning was not present) the ELF will contain a
+  LOAD segment with RWE permissions. Therefore, it could be concluded,
+  that such permission on LOAD segment was not considered as a problem
+  for OPTEE OS on version 3.13.0.
+
+Upstream-Status: Inappropriate other
+
+This is a local fix, no need to upstream.
+
+Signed-off-by: Daniil Klimuk <daniil.klimuk@3mdeb.com>
+---
+ core/arch/arm/kernel/link.mk | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/core/arch/arm/kernel/link.mk b/core/arch/arm/kernel/link.mk
+index 922340f5ed12..68abf251b810 100644
+--- a/core/arch/arm/kernel/link.mk
++++ b/core/arch/arm/kernel/link.mk
+@@ -15,7 +15,6 @@ link-ldflags += -pie -Bsymbolic -z notext -z norelro $(ldflag-apply-dynamic-relo
+ endif
+ link-ldflags += -T $(link-script-pp) -Map=$(link-out-dir)/tee.map
+ link-ldflags += --sort-section=alignment
+-link-ldflags += --fatal-warnings
+ link-ldflags += --gc-sections
+
+ link-ldadd  = $(LDADD)
+--
+2.48.1

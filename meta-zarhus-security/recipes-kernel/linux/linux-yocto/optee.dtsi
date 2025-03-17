@@ -1,0 +1,28 @@
+/ {
+	compatible = "rockchip,rk3566";
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		// Memory for OP-TEE OS use only:
+		optee_tzdram: optee-tzdram@8400000 {
+                       reg = <0x0 0x08400000 0x0 0x00E00000>;
+                       no-map;
+		};
+
+		// Memory shared between TEE and REE:
+		optee_shmem: optee-shmem@9400000 {
+                       reg = <0x0 0x09200000 0x0 0x00200000>;
+		};
+	};
+
+	firmware {
+		optee: optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+			shm = <&optee_shmem>;
+		};
+	};
+};
