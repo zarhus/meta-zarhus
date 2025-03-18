@@ -139,7 +139,7 @@
   "oelint.var.licenseremotefile": "info",
   "oelint.vars.licensesdpx": "warning",
   "oelint.vars.licfileprefix": "warning",
-  "oelint.vars.mispell": "warning",
+  "oelint.vars.mispell": "info",
   "oelint.vars.multilineident": "warning",
   "oelint.vars.overrideappend": "warning",
   "oelint.vars.pbpusage": "error",

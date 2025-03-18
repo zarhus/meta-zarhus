@@ -1,0 +1,10 @@
+---
+header:
+  version: 11
+
+distro: zarhus-distro-webkit
+
+repos:
+  meta-zarhus:
+    layers:
+      meta-zarhus-security:

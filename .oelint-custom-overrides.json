@@ -2,6 +2,9 @@
     "replacements": {
         "distros": [
             "dbg"
-        ]
+        ],
+	"machines": [
+	    "rk3566"
+	]
     }
 }

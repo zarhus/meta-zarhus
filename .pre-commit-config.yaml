@@ -42,7 +42,7 @@ repos:
         args: ["--severity=warning"]
 
   - repo: https://github.com/priv-kweihmann/oelint-adv
-    rev: 5.7.2
+    rev: 6.7.1
     hooks:
       - id: oelint-adv
         args: [--rulefile=.oelint-ruleset.json, --hide=info, --quiet, --fix, --constantmods=+.oelint-custom-overrides.json]
