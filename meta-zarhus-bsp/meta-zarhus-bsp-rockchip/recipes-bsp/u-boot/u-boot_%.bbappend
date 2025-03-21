@@ -12,6 +12,7 @@ SRC_URI:append = " \
     file://rk3566-orangepi-cm4-base.dts \
     file://rk3566-orangepi-cm4-base-u-boot.dtsi \
     file://rk3566-orangepi-cm4.dtsi \
+    file://vop2_support.patch \
     "
 
 do_configure:prepend() {

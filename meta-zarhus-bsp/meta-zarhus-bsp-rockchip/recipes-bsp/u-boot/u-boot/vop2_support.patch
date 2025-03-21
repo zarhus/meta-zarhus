@@ -1,0 +1,2109 @@
+From 1ed231c746b05f83b282b1faaac596c27d796338 Mon Sep 17 00:00:00 2001
+From: Dang Huynh <danct12@riseup.net>
+Date: Sun, 23 Feb 2025 19:13:36 +0700
+Subject: [PATCH 01/12] video: rockchip: dw-mipi-dsi: Depend on
+ CONFIG_VIDEO_BRIDGE
+
+The driver is in video bridge class, so we must depend on it or
+the driver will fail to init.
+
+Signed-off-by: Dang Huynh <danct12@riseup.net>
+Reviewed-by: Svyatoslav Ryhel <clamor95@gmail.com>
+---
+ drivers/video/rockchip/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/rockchip/Kconfig b/drivers/video/rockchip/Kconfig
+index 01804dcb1cc8..72fcd6715a69 100644
+--- a/drivers/video/rockchip/Kconfig
++++ b/drivers/video/rockchip/Kconfig
+@@ -71,7 +71,7 @@ config DISPLAY_ROCKCHIP_MIPI
+ 
+ config DISPLAY_ROCKCHIP_DW_MIPI
+ 	bool "Rockchip Designware MIPI"
+-	depends on VIDEO_ROCKCHIP
++	depends on VIDEO_ROCKCHIP && VIDEO_BRIDGE
+ 	select VIDEO_DW_MIPI_DSI
+ 	help
+ 	  Select the Designware MIPI DSI controller in use on some Rockchip
+-- 
+2.47.1
+
+
+From b84f553fb41715019a5ba0e29e4d3303422e3725 Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Sun, 23 Feb 2025 19:13:37 +0700
+Subject: [PATCH 02/12] video: rockchip: dw_mipi_dsi: Improve pixel clock
+ calculations
+
+Calculate burst mode overhead in one place for both internal
+and external PHY use case and exit if out of range, instead
+of ignoring the wrong value.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+Signed-off-by: Dang Huynh <danct12@riseup.net>
+---
+ drivers/video/rockchip/dw_mipi_dsi_rockchip.c | 24 ++++++++-----------
+ 1 file changed, 10 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+index 1a5ab781e3f1..c149d8b85c33 100644
+--- a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
++++ b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+@@ -529,8 +529,6 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, struct display_timing *timings,
+ 	struct udevice *dev = device->dev;
+ 	struct dw_rockchip_dsi_priv *dsi = dev_get_priv(dev);
+ 	int bpp;
+-	unsigned long mpclk, tmp;
+-	unsigned int target_mbps = 1000;
+ 	unsigned int max_mbps = dppa_map[ARRAY_SIZE(dppa_map) - 1].max_mbps;
+ 	unsigned long best_freq = 0;
+ 	unsigned long fvco_min, fvco_max, fin, fout;
+@@ -547,30 +545,28 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, struct display_timing *timings,
+ 		return bpp;
+ 	}
+ 
+-	mpclk = DIV_ROUND_UP(timings->pixelclock.typ, 1000);
+-	if (mpclk) {
+-		/* take 1 / 0.8, since mbps must big than bandwidth of RGB */
+-		tmp = (mpclk * (bpp / lanes) * 10 / 8) / 1000;
+-		if (tmp < max_mbps)
+-			target_mbps = tmp;
+-		else
+-			dev_err(dsi->dsi_host,
+-				"DPHY clock frequency is out of range\n");
++	fout = timings->pixelclock.typ / MSEC_PER_SEC * bpp / lanes;
++	if (device->mode_flags & MIPI_DSI_MODE_VIDEO_BURST)
++		fout = fout * 12 / 10;
++	fout *= MSEC_PER_SEC;
++
++	if (fout > max_mbps * USEC_PER_SEC) {
++		dev_err(dsi->dsi_host, "DPHY clock frequency is out of range\n");
++		return -EINVAL;
+ 	}
+ 
+ 	/* for external phy only the mipi_dphy_config is necessary */
+ 	if (generic_phy_valid(&dsi->phy)) {
+-		phy_mipi_dphy_get_default_config(timings->pixelclock.typ  * 10 / 8,
++		phy_mipi_dphy_get_default_config(fout / bpp * lanes,
+ 						 bpp, lanes,
+ 						 &dsi->phy_opts);
+-		dsi->lane_mbps = target_mbps;
++		dsi->lane_mbps = DIV_ROUND_UP(fout, USEC_PER_SEC);
+ 		*lane_mbps = dsi->lane_mbps;
+ 
+ 		return 0;
+ 	}
+ 
+ 	fin = clk_get_rate(dsi->ref);
+-	fout = target_mbps * USEC_PER_SEC;
+ 
+ 	/* constraint: 5Mhz <= Fref / N <= 40MHz */
+ 	min_prediv = DIV_ROUND_UP(fin, 40 * USEC_PER_SEC);
+-- 
+2.47.1
+
+
+From d8b77e4ee57f027c78315e576b127b34fc21a27d Mon Sep 17 00:00:00 2001
+From: Ondrej Jirman <megi@xff.cz>
+Date: Sun, 23 Feb 2025 19:13:38 +0700
+Subject: [PATCH 03/12] video: rockchip: dw_mipi_dsi: Proceed when external PHY
+ is not defined
+
+In this case the DM returns ENOENT, not ENODATA.
+
+Signed-off-by: Ondrej Jirman <megi@xff.cz>
+Signed-off-by: Dang Huynh <danct12@riseup.net>
+Reviewed-by: Svyatoslav Ryhel <clamor95@gmail.com>
+---
+ drivers/video/rockchip/dw_mipi_dsi_rockchip.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+index c149d8b85c33..b15480bb33bc 100644
+--- a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
++++ b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+@@ -842,7 +842,7 @@ static int dw_mipi_dsi_rockchip_probe(struct udevice *dev)
+ 	 * NULL if it's not initialized.
+ 	 */
+ 	ret = generic_phy_get_by_name(dev, "dphy", &priv->phy);
+-	if (ret && ret != -ENODATA) {
++	if (ret && ret != -ENOENT) {
+ 		dev_err(dev, "failed to get mipi dphy: %d\n", ret);
+ 		return ret;
+ 	}
+-- 
+2.47.1
+
+
+From f4dd193c9f0e38b5ea12e999d111b6561680e06d Mon Sep 17 00:00:00 2001
+From: Dang Huynh <danct12@riseup.net>
+Date: Sun, 23 Feb 2025 19:13:39 +0700
+Subject: [PATCH 04/12] video: rockchip: dw-mipi-dsi: Add get_display_timing
+ support
+
+This allows video drivers to obtain display timings from the video
+bridge.
+
+Signed-off-by: Dang Huynh <danct12@riseup.net>
+Reviewed-by: Svyatoslav Ryhel <clamor95@gmail.com>
+---
+ drivers/video/rockchip/dw_mipi_dsi_rockchip.c | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+index b15480bb33bc..7fd45a600bf8 100644
+--- a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
++++ b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+@@ -227,6 +227,7 @@ struct dw_rockchip_dsi_priv {
+ 	struct mipi_dsi_device device;
+ 	void __iomem *base;
+ 	struct udevice *panel;
++	struct display_timing timings;
+ 	void __iomem *grf;
+ 
+ 	/* Optional external dphy */
+@@ -712,7 +713,7 @@ static int dw_mipi_dsi_rockchip_attach(struct udevice *dev)
+ 	struct dw_rockchip_dsi_priv *priv = dev_get_priv(dev);
+ 	struct mipi_dsi_device *device = &priv->device;
+ 	struct mipi_dsi_panel_plat *mplat;
+-	struct display_timing timings;
++	struct display_timing *timings = &priv->timings;
+ 	int ret;
+ 
+ 	ret = uclass_first_device_err(UCLASS_PANEL, &priv->panel);
+@@ -727,10 +728,10 @@ static int dw_mipi_dsi_rockchip_attach(struct udevice *dev)
+ 	device->format = mplat->format;
+ 	device->mode_flags = mplat->mode_flags;
+ 
+-	ret = panel_get_display_timing(priv->panel, &timings);
++	ret = panel_get_display_timing(priv->panel, timings);
+ 	if (ret) {
+ 		ret = ofnode_decode_display_timing(dev_ofnode(priv->panel),
+-						   0, &timings);
++						   0, timings);
+ 		if (ret) {
+ 			dev_err(dev, "decode display timing error %d\n", ret);
+ 			return ret;
+@@ -743,7 +744,7 @@ static int dw_mipi_dsi_rockchip_attach(struct udevice *dev)
+ 		return ret;
+ 	}
+ 
+-	ret = dsi_host_init(priv->dsi_host, device, &timings, 4,
++	ret = dsi_host_init(priv->dsi_host, device, timings, 4,
+ 			    &dsi_rockchip_phy_ops);
+ 	if (ret) {
+ 		dev_err(dev, "failed to initialize mipi dsi host\n");
+@@ -905,9 +906,19 @@ static int dw_mipi_dsi_rockchip_probe(struct udevice *dev)
+ 	return 0;
+ }
+ 
++static int dw_mipi_dsi_rockchip_get_dt(struct udevice *dev,
++				       struct display_timing *timings)
++{
++	struct dw_rockchip_dsi_priv *priv = dev_get_priv(dev);
++
++	memcpy(timings, &priv->timings, sizeof(*timings));
++	return 0;
++}
++
+ struct video_bridge_ops dw_mipi_dsi_rockchip_ops = {
+ 	.attach = dw_mipi_dsi_rockchip_attach,
+ 	.set_backlight = dw_mipi_dsi_rockchip_set_bl,
++	.get_display_timing = dw_mipi_dsi_rockchip_get_dt,
+ };
+ 
+ static const struct rockchip_dw_dsi_chip_data rk3399_chip_data[] = {
+-- 
+2.47.1
+
+
+From eb373271c6fd7833e7f30f5076630c18f6063e42 Mon Sep 17 00:00:00 2001
+From: Dang Huynh <danct12@riseup.net>
+Date: Sun, 23 Feb 2025 19:13:41 +0700
+Subject: [PATCH 05/12] video: rockchip: Add VOP2 support
+
+VOP2 (Video Output Processor v2) is a display controller on Rockchip
+SoCs. It can be found on RK3566/8 and RK3588.
+
+This commit currently only supports RK3566/8.
+
+Signed-off-by: Dang Huynh <danct12@riseup.net>
+---
+ .../include/asm/arch-rockchip/vop_rk3568.h    | 249 +++++++++
+ drivers/video/rockchip/Makefile               |   3 +-
+ drivers/video/rockchip/rk3568_vop.c           | 247 +++++++++
+ drivers/video/rockchip/rk_vop2.c              | 477 ++++++++++++++++++
+ drivers/video/rockchip/rk_vop2.h              |  59 +++
+ 5 files changed, 1034 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/include/asm/arch-rockchip/vop_rk3568.h
+ create mode 100644 drivers/video/rockchip/rk3568_vop.c
+ create mode 100644 drivers/video/rockchip/rk_vop2.c
+ create mode 100644 drivers/video/rockchip/rk_vop2.h
+
+diff --git a/arch/arm/include/asm/arch-rockchip/vop_rk3568.h b/arch/arm/include/asm/arch-rockchip/vop_rk3568.h
+new file mode 100644
+index 000000000000..bfcdf7a07cc2
+--- /dev/null
++++ b/arch/arm/include/asm/arch-rockchip/vop_rk3568.h
+@@ -0,0 +1,249 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (c) 2024 Dang Huynh <danct12@riseup.net>
++ *
++ * Based on vop_rk3288.h:
++ *   Copyright (c) 2015 Google, Inc
++ *   Copyright 2014 Rockchip Inc.
++ */
++
++#ifndef _ASM_ARCH_VOP_RK3568_H
++#define _ASM_ARCH_VOP_RK3568_H
++
++struct rk3568_vop_sysctrl {
++	u32 reg_cfg_done;
++	u32 version_info;
++	u32 autogating_ctrl;
++	u32 win_reg_cfg_done;
++	u32 axi_ctrl0;
++	u32 axi_hurry_ctrl0;
++	u32 axi_hurry_ctrl1;
++	u32 axi_outstanding_ctrl0;
++	u32 axi_outstanding_ctrl1;
++	u32 axi_lut_ctrl;
++	u32 dsp_en;
++	u32 dsp_ctrl;
++	u32 dsp_pol;
++	u32 pwr_ctrl;
++	u32 var_freq_ctrl;
++	u32 mmu_raddr_range;
++	u32 wb_ctrl0;
++	u32 wb_xspd;
++	u32 wb_yrgb_mst;
++	u32 wb_cbr_mst;
++	u32 otp_win;
++	u32 otp_mirr_ctrl;
++	u32 lut_port_sel;
++	u32 pwr_stable_ctrl;
++	u32 status0;
++	u32 status1;
++	u32 status2;
++	u32 status3;
++	u32 line_flag0;
++	u32 line_flag1;
++	u32 line_flag2;
++	u32 line_flag3;
++	u32 sys0_intr_en;
++	u32 sys0_intr_clr;
++	u32 sys0_intr_status;
++	u32 sys0_intr_status_raw;
++	u32 sys1_intr_en;
++	u32 sys1_intr_clr;
++	u32 sys1_intr_status;
++	u32 sys1_intr_status_raw;
++	u32 port0_intr_en;
++	u32 port0_intr_clr;
++	u32 port0_intr_status;
++	u32 port0_intr_status_raw;
++	u32 port1_intr_en;
++	u32 port1_intr_clr;
++	u32 port1_intr_status;
++	u32 port1_intr_status_raw;
++	u32 port2_intr_en;
++	u32 port2_intr_clr;
++	u32 port2_intr_status;
++	u32 port2_intr_status_raw;
++	u32 port3_intr_en;
++	u32 port3_intr_clr;
++	u32 port3_intr_status;
++	u32 port3_intr_status_raw;
++};
++
++check_member(rk3568_vop_sysctrl, port3_intr_status_raw, 0x00DC);
++
++struct rk3568_vop_overlay {
++	u32 overlay_ctrl;
++	u32 layer_sel;
++	u32 port_sel;
++};
++
++check_member(rk3568_vop_overlay, port_sel, 0x0008);
++
++struct rk3568_vop_post {
++	u32 dsp_ctrl;
++	u32 mipi_ctrl;
++	u32 color_ctrl;
++	u32 reserved2;
++	u32 lut_reserved[4];
++	u32 reserved[3];
++	u32 dsp_bg;
++	u32 prescan_htimings;
++	u32 dsp_hact_info;
++	u32 dsp_vact_info;
++	u32 scl_factor_yrgb;
++	u32 scl_ctrl;
++	u32 dsp_vact_info_f1;
++	u32 dsp_htotal_hs_end;
++	u32 dsp_hact_st_end;
++	u32 dsp_vtotal_vs_end;
++	u32 dsp_vact_st_end;
++	u32 dsp_vs_st_end_f1;
++	u32 dsp_vact_st_end_f1;
++};
++
++check_member(rk3568_vop_post, dsp_vact_st_end_f1, 0x005C);
++
++struct rk3568_vop_esmart {
++	u32 esmart_ctrl0;
++	u32 esmart_ctrl1;
++	u32 reserved0[2];
++	u32 esmart_region0_mst_ctl;
++	u32 esmart_region0_mst_yrgb;
++	u32 esmart_region0_mst_cbcr;
++	u32 esmart_region0_vir;
++	u32 esmart_region0_act_info;
++	u32 esmart_region0_dsp_info;
++	u32 esmart_region0_dsp_offset;
++	u32 reserved1[1];
++	u32 esmart_region0_scl_ctrl;
++	u32 esmart_region0_scl_factor_yrgb;
++	u32 esmart_region0_scl_factor_cbcr;
++	u32 esmart_region0_scl_offset;
++};
++
++check_member(rk3568_vop_esmart, esmart_region0_scl_offset, 0x003C);
++
++enum rockchip_fb_data_format_t {
++	ARGB8888 = 0,
++	RGB888 = 1,
++	RGB565 = 2,
++};
++
++enum vop_modes {
++	VOP_MODE_EDP = 0,
++	VOP_MODE_MIPI,
++	VOP_MODE_HDMI,
++	VOP_MODE_LVDS,
++	VOP_MODE_DP,
++};
++
++/* OFFSETS */
++#define VOP2_SYSREG_OFFSET 0x0
++#define VOP2_OVERLAY_OFFSET 0x0600
++#define VOP2_POST_OFFSET(n) 0x0c00 + ((n) * 0x100)
++#define VOP2_CLUSTER_OFFSET(n) 0x1000 + ((n) * 0x200)
++#define VOP2_ESMART_OFFSET(n) 0x1800 + ((n) * 0x200)
++
++/* System Registers */
++/* REG_CFG_DONE */
++#define M_GLOBAL_REGDONE (1 << 15)
++#define M_LOAD_GLOBAL(x) (1 << ((x) & 3))
++
++#define V_GLOBAL_REGDONE(x) (((x) & 1) << 15)
++#define V_LOAD_GLOBAL(x, y) (((y) & 1) << ((x) & 3))
++
++/* VERSION_INFO */
++#define M_FPGA_VERSION  (0xffff << 16)
++#define M_RTL_VERSION (0xffff)
++
++/* AUTO_GATING_CTRL */
++#define M_AUTO_GATING (1 << 31)
++#define V_AUTO_GATING(x) (((x) & 1) << 31)
++
++/* DSP_INFACE_POL */
++#define M_DSP_INFACE_REGDONE (1 << 28)
++#define V_DSP_INFACE_REGDONE(x) (((x) & 1) << 28)
++
++/* OTP_WIN_EN */
++#define M_OTP_WIN (1 << 0)
++#define V_OTP_WIN(x) (((x) & 1) << 0)
++
++/* Overlay */
++/* OVERLAY_CTRL */
++#define M_LAYER_SEL_REGDONE_SEL (3 << 30)
++#define M_LAYER_SEL_REGDONE_EN (1 << 28)
++#define M_VP_OVERLAY_MODE(vp) (1 << ((vp) & 3))
++
++#define V_LAYER_SEL_REGDONE_SEL(x) (((x) & 3) << 30)
++#define V_LAYER_SEL_REGDONE_EN(x) (((x) & 1) << 28)
++#define V_VP_OVERLAY_MODE(x, vp) (((x) & 1) << ((vp) & 3))
++
++/* LAYER_SEL */
++#define V_LAYER_SEL(x, port) (((port) & 7) << 4 * ((x) & 7))
++
++/* PORT_SEL */
++#define V_ESMART_SEL_PORT(x, vp) (((vp) & 3) << (24 + (2 * ((x) & 3))))
++#define V_PORT_MUX(x, vp) (((x) & 0xf) << 4 * ((vp) & 3))
++
++/* Post processing */
++/* DSP_CTRL */
++#define M_POST_STANDBY (1 << 31)
++#define M_POST_FP_STANDBY (1 << 30)
++#define M_POST_BLACK (1 << 27)
++#define M_POST_OUT_ZERO (1 << 26)
++#define M_POST_LB_MODE (1 << 23)
++#define M_PRE_DITHER_DOWN (1 << 16)
++#define M_DSP_OUT_MODE (0xf)
++
++#define V_POST_STANDBY(x) (((x) & 1) << 31)
++#define V_POST_FP_STANDBY(x) (((x) & 1) << 30)
++#define V_POST_BLACK(x) (((x) & 1) << 27)
++#define V_POST_OUT_ZERO(x) (((x) & 1) << 26)
++#define V_POST_LB_MODE(x) (((x) & 1) << 23)
++#define V_PRE_DITHER_DOWN(x) (((x) & 1) << 16)
++#define V_DSP_OUT_MODE(x) ((x) & 0xf)
++
++/* COLOR_CTRL */
++#define M_POST_COLORBAR_MODE (1 << 1)
++#define M_POST_COLORBAR_EN (1 << 0)
++
++#define V_POST_COLORBAR_MODE(x) (((x) & 1) << 1)
++#define V_POST_COLORBAR_EN(x) (((x) & 1) << 0)
++
++/* DSP_BG */
++#define M_DSP_BG_RED     (0x3f << 20)
++#define M_DSP_BG_GREEN   (0x3f << 10)
++#define M_DSP_BG_BLUE    (0x3f << 0)
++
++#define V_DSP_BG_RED(x)     (((x) & 0x3f) << 20)
++#define V_DSP_BG_GREEN(x)   (((x) & 0x3f) << 10)
++#define V_DSP_BG_BLUE(x)    (((x) & 0x3f) << 0)
++
++/* ESMART */
++#define M_ESMART_REGION0_MST_EN (1 << 0)
++#define V_ESMART_REGION0_DATA_FMT(x)        (((x) & 0x16) << 1)
++
++/* VOP2_ESMART_REGION0_VIR */
++#define V_ARGB888_VIRWIDTH(x)	(((x) & 0xffff) << 0)
++#define V_RGB888_VIRWIDTH(x)	((((((x) * 3) >> 2) + ((x) % 3)) & 0xffff) << 0)
++#define V_RGB565_VIRWIDTH(x)	((((x) / 2) & 0xffff) << 0)
++#define YUV_VIRWIDTH(x)		((((x) / 4) & 0xffff) << 0)
++
++#define V_ACT_HEIGHT(x)         (((x) & 0x1fff) << 16)
++#define V_ACT_WIDTH(x)          ((x) & 0x1fff)
++#define V_DSP_HEIGHT(x)         (((x) & 0x1fff) << 16)
++#define V_DSP_WIDTH(x)          ((x) & 0x1fff)
++#define V_DSP_YST(x)         (((x) & 0x1fff) << 16)
++#define V_DSP_XST(x)          ((x) & 0x1fff)
++
++#define V_HSYNC(x)		(((x) & 0x1fff) << 0)   /* hsync pulse width */
++#define V_HORPRD(x)		(((x) & 0x1fff) << 16)   /* horizontal period */
++#define V_VSYNC(x)		(((x) & 0x1fff) << 0)
++#define V_VERPRD(x)		(((x) & 0x1fff) << 16)
++
++#define V_HEAP(x)		(((x) & 0x1fff) << 0)/* horizontal active end */
++#define V_HASP(x)		(((x) & 0x1fff) << 16)/* horizontal active start */
++#define V_VAEP(x)		(((x) & 0x1fff) << 0)
++#define V_VASP(x)		(((x) & 0x1fff) << 16)
++
++#endif
+diff --git a/drivers/video/rockchip/Makefile b/drivers/video/rockchip/Makefile
+index 8128289cc820..d9f2381a2f5e 100644
+--- a/drivers/video/rockchip/Makefile
++++ b/drivers/video/rockchip/Makefile
+@@ -4,9 +4,10 @@
+ # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
+ 
+ ifdef CONFIG_VIDEO_ROCKCHIP
+-obj-y += rk_vop.o
++obj-y += rk_vop.o rk_vop2.o
+ obj-$(CONFIG_ROCKCHIP_RK3288) += rk3288_vop.o
+ obj-$(CONFIG_ROCKCHIP_RK3399) += rk3399_vop.o
++obj-$(CONFIG_ROCKCHIP_RK3568) += rk3568_vop.o
+ obj-$(CONFIG_DISPLAY_ROCKCHIP_EDP) += rk_edp.o
+ obj-$(CONFIG_DISPLAY_ROCKCHIP_LVDS) += rk_lvds.o
+ obj-hdmi-$(CONFIG_ROCKCHIP_RK3288) += rk3288_hdmi.o
+diff --git a/drivers/video/rockchip/rk3568_vop.c b/drivers/video/rockchip/rk3568_vop.c
+new file mode 100644
+index 000000000000..6027e0ce450e
+--- /dev/null
++++ b/drivers/video/rockchip/rk3568_vop.c
+@@ -0,0 +1,247 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2024 Dang Huynh <danct12@riseup.net>
++ *
++ * Based on rk3399_vop.c:
++ *   Copyright (c) 2017 Theobroma Systems Design und Consulting GmbH
++ *   Copyright (c) 2015 Google, Inc
++ *   Copyright 2014 Rockchip Inc.
++ */
++
++#include <clk.h>
++#include <display.h>
++#include <dm.h>
++#include <dm/device_compat.h>
++#include <regmap.h>
++#include <video.h>
++#include <asm/arch-rockchip/hardware.h>
++#include <asm/global_data.h>
++#include <linux/bitfield.h>
++#include "rk_vop2.h"
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define M_MIPI1_INFACE_MUX (3 << 21)
++#define M_LVDS_INFACE_MUX (3 << 18)
++#define M_MIPI_INFACE_MUX (3 << 16)
++#define M_EDP_INFACE_MUX (3 << 14)
++#define M_HDMI_INFACE_MUX (3 << 10)
++#define M_RGB_INFACE_MUX (3 << 8)
++
++#define V_MIPI1_INFACE_MUX(x) (((x) & 3) << 21)
++#define V_LVDS_INFACE_MUX(x) (((x) & 3) << 18)
++#define V_MIPI_INFACE_MUX(x) (((x) & 3) << 16)
++#define V_EDP_INFACE_MUX(x) (((x) & 3) << 14)
++#define V_HDMI_INFACE_MUX(x) (((x) & 3) << 10)
++#define V_RGB_INFACE_MUX(x) (((x) & 3) << 8)
++
++#define M_MIPI_POL (0xf << 16)
++#define M_EDP_POL (0xf << 12)
++#define M_HDMI_POL (0xf << 4)
++#define M_RGB_LVDS_POL (0xf << 0)
++
++#define V_MIPI_POL(x) (((x) & 0xf) << 16)
++#define V_EDP_POL(x) (((x) & 0xf) << 12)
++#define V_HDMI_POL(x) (((x) & 0xf) << 4)
++#define V_RGB_LVDS_POL(x) (((x) & 0xf) << 0)
++
++#define M_MIPI1_OUT_EN (1 << 20)
++#define M_BT656_OUT_EN (1 << 7)
++#define M_BT1120_OUT_EN (1 << 6)
++#define M_LVDS_OUT_EN (1 << 5)
++#define M_MIPI_OUT_EN (1 << 4)
++#define M_EDP_OUT_EN (1 << 3)
++#define M_HDMI_OUT_EN (1 << 1)
++#define M_RGB_OUT_EN (1 << 0)
++
++#define M_ALL_OUT_EN (M_MIPI1_OUT_EN | M_BT656_OUT_EN | M_BT1120_OUT_EN | M_LVDS_OUT_EN | \
++			M_MIPI_OUT_EN | M_EDP_OUT_EN | M_HDMI_OUT_EN | M_RGB_OUT_EN)
++
++#define V_MIPI1_OUT_EN(x) (((x) & 1) << 20)
++#define V_BT656_OUT_EN(x) (((x) & 1) << 7)
++#define V_BT1120_OUT_EN(x) (((x) & 1) << 6)
++#define V_LVDS_OUT_EN(x) (((x) & 1) << 5)
++#define V_MIPI_OUT_EN(x) (((x) & 1) << 4)
++#define V_EDP_OUT_EN(x) (((x) & 1) << 3)
++#define V_HDMI_OUT_EN(x) (((x) & 1) << 1)
++#define V_RGB_OUT_EN(x) (((x) & 1) << 0)
++
++static void rk3568_enable_output(struct udevice *dev,
++				 enum vop_modes mode, u32 port)
++{
++	struct rk_vop2_priv *priv = dev_get_priv(dev);
++	struct rk3568_vop_sysctrl *sysctrl = priv->regs + VOP2_SYSREG_OFFSET;
++	u32 reg;
++
++	switch (mode) {
++	case VOP_MODE_EDP:
++		reg |= M_EDP_OUT_EN | V_EDP_INFACE_MUX(port);
++		break;
++
++	case VOP_MODE_HDMI:
++		reg |= M_HDMI_OUT_EN | V_HDMI_INFACE_MUX(port);
++		break;
++
++	case VOP_MODE_MIPI:
++		reg |= M_MIPI_OUT_EN | V_MIPI_INFACE_MUX(port);
++		break;
++
++	case VOP_MODE_LVDS:
++		reg |= M_LVDS_OUT_EN | V_LVDS_INFACE_MUX(port);
++		break;
++
++	default:
++		debug("%s: unsupported output mode %x\n", __func__, mode);
++		return;
++	}
++
++	debug("%s: vop output 0x%08x\n", __func__, reg);
++	writel(reg, &sysctrl->dsp_en);
++}
++
++static void rk3568_set_pin_polarity(struct udevice *dev,
++				    enum vop_modes mode, u32 polarity)
++{
++	struct rk_vop2_priv *priv = dev_get_priv(dev);
++	struct rk3568_vop_sysctrl *sysctrl = priv->regs + VOP2_SYSREG_OFFSET;
++	u32 reg;
++
++	reg = M_DSP_INFACE_REGDONE;
++
++	switch (mode) {
++	case VOP_MODE_EDP:
++		reg |= V_EDP_POL(polarity);
++		break;
++
++	case VOP_MODE_HDMI:
++		reg |= V_HDMI_POL(polarity);
++		break;
++
++	case VOP_MODE_MIPI:
++		reg |= V_MIPI_POL(polarity);
++		break;
++
++	/* RGB and LVDS shares the same polarity */
++	case VOP_MODE_LVDS:
++		reg |= V_RGB_LVDS_POL(polarity);
++		break;
++
++	default:
++		debug("%s: unsupported output mode %x\n", __func__, mode);
++		return;
++	}
++
++	debug("%s: vop polarity 0x%08x\n", __func__, reg);
++	writel(reg, &sysctrl->dsp_pol);
++}
++
++static int rkvop_initialize(struct udevice *dev)
++{
++	struct rk_vop2_priv *priv = dev_get_priv(dev);
++	struct rk3568_vop_sysctrl *sysctrl = priv->regs + VOP2_SYSREG_OFFSET;
++	struct clk aclk;
++	int ret;
++
++	ret = clk_get_by_name(dev, "aclk", &aclk);
++	if (ret < 0)
++		return ret;
++
++	ret = clk_enable(&aclk);
++	if (ret < 0) {
++		dev_err(dev, "Failed to enable aclk: %d\n", ret);
++		return ret;
++	}
++
++	debug("aclk rate: %ld\n", clk_get_rate(&aclk));
++
++	/* Enable OTP function */
++	clrsetbits_le32(&sysctrl->otp_win, M_OTP_WIN, V_OTP_WIN(1));
++
++	writel(M_GLOBAL_REGDONE, &sysctrl->reg_cfg_done);
++
++	/* Disable auto gating */
++	clrsetbits_le32(&sysctrl->autogating_ctrl, M_AUTO_GATING, V_AUTO_GATING(0));
++
++	return 0;
++}
++
++/*
++ * FIXME: Booting into Linux with a window plane enabled causes VOP IOMMU
++ * to fail.
++ *
++ * This can be removed when there's a better way to handle MMU under Linux.
++ */
++static int rk3568_vop_remove(struct udevice *dev)
++{
++	struct rk_vop2_priv *priv = dev_get_priv(dev);
++	struct rk3568_vop_sysctrl *sysctrl = priv->regs + VOP2_SYSREG_OFFSET;
++	struct rk3568_vop_esmart *esmart = priv->regs + VOP2_ESMART_OFFSET(0);
++	struct rk3568_vop_post *post = priv->regs + VOP2_POST_OFFSET(priv->vp);
++
++	debug("Removing VOP2 driver (vp=%d)\n", priv->vp);
++
++	/*
++	 * It's best to put the display to standby mode to prevent
++	 * unexpected behaviors.
++	 */
++	clrsetbits_le32(&post->dsp_ctrl, M_POST_STANDBY, V_POST_STANDBY(1));
++	mdelay(120);
++
++	writel(0, &esmart->esmart_region0_mst_ctl);
++
++	/* On RK3568, we don't need to shift the bit by 16. */
++	writel(M_GLOBAL_REGDONE | M_LOAD_GLOBAL(priv->vp),
++	       &sysctrl->reg_cfg_done);
++
++	return 0;
++}
++
++static int rk3568_vop_probe(struct udevice *dev)
++{
++	int ret;
++
++	/* Before relocation we don't need to do anything */
++	if (!(gd->flags & GD_FLG_RELOC))
++		return 0;
++
++	ret = rkvop_initialize(dev);
++	if (ret)
++		return ret;
++
++	return rk_vop2_probe(dev);
++}
++
++struct rkvop_platdata rk3568_platdata = {
++	.delay = 20,
++	.bg_dly = {42, 40, 40},
++};
++
++struct rkvop_driverdata rk3568_driverdata = {
++	.features = VOP_FEATURE_OUTPUT_10BIT,
++	.set_pin_polarity = rk3568_set_pin_polarity,
++	.enable_output = rk3568_enable_output,
++	.platdata = &rk3568_platdata,
++};
++
++static const struct udevice_id rk3568_vop_ids[] = {
++	{ .compatible = "rockchip,rk3566-vop",
++	  .data = (ulong)&rk3568_driverdata },
++	{ .compatible = "rockchip,rk3568-vop",
++	  .data = (ulong)&rk3568_driverdata },
++	{ }
++};
++
++static const struct video_ops rk3568_vop_ops = {
++};
++
++U_BOOT_DRIVER(rk3568_vop) = {
++	.name	= "rk3568_vop",
++	.id	= UCLASS_VIDEO,
++	.of_match = rk3568_vop_ids,
++	.ops	= &rk3568_vop_ops,
++	.bind	= rk_vop2_bind,
++	.probe	= rk3568_vop_probe,
++	.remove = rk3568_vop_remove,
++	.priv_auto	= sizeof(struct rk_vop2_priv),
++	.flags = DM_FLAG_PRE_RELOC | DM_FLAG_OS_PREPARE,
++};
+diff --git a/drivers/video/rockchip/rk_vop2.c b/drivers/video/rockchip/rk_vop2.c
+new file mode 100644
+index 000000000000..14abe316f5b4
+--- /dev/null
++++ b/drivers/video/rockchip/rk_vop2.c
+@@ -0,0 +1,477 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2024 Dang Huynh <danct12@riseup.net>
++ *
++ * Based on rk_vop.c:
++ *   Copyright (c) 2015 Google, Inc
++ *   Copyright 2014 Rockchip Inc.
++ */
++
++#include <clk.h>
++#include <display.h>
++#include <dm.h>
++#include <dm/device_compat.h>
++#include <edid.h>
++#include <log.h>
++#include <regmap.h>
++#include <reset.h>
++#include <syscon.h>
++#include <video.h>
++#include <asm/global_data.h>
++#include <asm/gpio.h>
++#include <asm/io.h>
++#include <asm/arch-rockchip/clock.h>
++#include <asm/arch-rockchip/vop_rk3568.h>
++#include <dm/device-internal.h>
++#include <dm/uclass-internal.h>
++#include <efi.h>
++#include <efi_loader.h>
++#include <linux/bitops.h>
++#include <linux/err.h>
++#include <power/regulator.h>
++
++#include "rk_vop2.h"
++
++DECLARE_GLOBAL_DATA_PTR;
++
++enum vop_pol {
++	HSYNC_POSITIVE = 0,
++	VSYNC_POSITIVE = 1,
++	DEN_NEGATIVE   = 2,
++	DCLK_INVERT    = 3
++};
++
++static void rkvop_cfg_regdone(struct rk3568_vop_sysctrl *sysctrl, int port)
++{
++	u32 reg;
++
++	reg = M_GLOBAL_REGDONE;
++
++	/*
++	 * For RK3588, changes will only take effect when the same bit is
++	 * leftshifted by 16.
++	 */
++	reg |= M_LOAD_GLOBAL(port) | M_LOAD_GLOBAL(port) << 16;
++
++	writel(reg, &sysctrl->reg_cfg_done);
++}
++
++static void rkvop_enable(struct udevice *dev, ulong fbbase,
++			 int fb_bits_per_pixel,
++		const struct display_timing *edid, int port,
++		struct rkvop_platdata *platdata)
++{
++	struct rk_vop2_priv *priv = dev_get_priv(dev);
++	struct rk3568_vop_overlay *overlay = priv->regs + VOP2_OVERLAY_OFFSET;
++	struct rk3568_vop_esmart *esmart = priv->regs + VOP2_ESMART_OFFSET(0);
++	u32 reg;
++	u32 rgb_mode;
++	u32 hactive = edid->hactive.typ;
++	u32 vactive = edid->vactive.typ;
++
++	debug("(%s, %s): esmart addr: 0x%p\n", dev_read_name(dev), __func__, esmart);
++
++	writel(V_ACT_WIDTH(hactive - 1) | V_ACT_HEIGHT(vactive - 1),
++	       &esmart->esmart_region0_act_info);
++
++	/* Set offset to 0,0 */
++	writel(0, &esmart->esmart_region0_dsp_offset);
++
++	writel(V_DSP_WIDTH(hactive - 1) |
++			V_DSP_HEIGHT(vactive - 1),
++			&esmart->esmart_region0_dsp_info);
++
++	switch (fb_bits_per_pixel) {
++	case 16:
++		rgb_mode = RGB565;
++		writel(V_RGB565_VIRWIDTH(hactive), &esmart->esmart_region0_vir);
++		break;
++	case 24:
++		rgb_mode = RGB888;
++		writel(V_RGB888_VIRWIDTH(hactive), &esmart->esmart_region0_vir);
++		break;
++	case 32:
++	default:
++		rgb_mode = ARGB8888;
++		writel(V_ARGB888_VIRWIDTH(hactive), &esmart->esmart_region0_vir);
++		break;
++	}
++
++	writel(fbbase, &esmart->esmart_region0_mst_yrgb);
++
++	writel(V_ESMART_REGION0_DATA_FMT(rgb_mode) | M_ESMART_REGION0_MST_EN,
++	       &esmart->esmart_region0_mst_ctl);
++
++	reg = readl(&overlay->overlay_ctrl) | M_LAYER_SEL_REGDONE_EN;
++	writel(reg, &overlay->overlay_ctrl);
++
++	/* Set layer 0 to esmart0 */
++	writel(V_LAYER_SEL(0, 2), &overlay->layer_sel);
++
++	/* Set esmart to the destination video port */
++	reg = V_ESMART_SEL_PORT(0, port);
++
++	/*
++	 * VOP2 requires every port mux to be configured.
++	 *
++	 * As U-Boot only supports singledisplay, we'll set all
++	 * unused ports to set layer to 8 (disabled).
++	 */
++	for (int i = 0; i < 4; i++) {
++		if (i != port)
++			reg |= V_PORT_MUX(8, i);
++	}
++
++	writel(reg, &overlay->port_sel);
++}
++
++static void rkvop_set_pin_polarity(struct udevice *dev,
++				   enum vop_modes mode, u32 polarity)
++{
++	struct rkvop_driverdata *ops =
++		(struct rkvop_driverdata *)dev_get_driver_data(dev);
++
++	if (ops->set_pin_polarity)
++		ops->set_pin_polarity(dev, mode, polarity);
++}
++
++static void rkvop_enable_output(struct udevice *dev, enum vop_modes mode, u32 port)
++{
++	struct rkvop_driverdata *ops =
++		(struct rkvop_driverdata *)dev_get_driver_data(dev);
++
++	if (ops->enable_output)
++		ops->enable_output(dev, mode, port);
++}
++
++static void rkvop_mode_set(struct udevice *dev,
++			   const struct display_timing *edid,
++		enum vop_modes mode, int port,
++		struct rkvop_platdata *platdata)
++{
++	struct rk_vop2_priv *priv = dev_get_priv(dev);
++	struct rk3568_vop_sysctrl *sysctrl = priv->regs + VOP2_SYSREG_OFFSET;
++	struct rk3568_vop_post *post = priv->regs + VOP2_POST_OFFSET(port);
++	struct rkvop_driverdata *data =
++		(struct rkvop_driverdata *)dev_get_driver_data(dev);
++
++	debug("(%s, %s): port addr: 0x%p\n", dev_read_name(dev), __func__, post);
++
++	u32 hactive = edid->hactive.typ;
++	u32 vactive = edid->vactive.typ;
++	u32 hsync_len = edid->hsync_len.typ;
++	u32 hback_porch = edid->hback_porch.typ;
++	u32 vsync_len = edid->vsync_len.typ;
++	u32 vback_porch = edid->vback_porch.typ;
++	u32 hfront_porch = edid->hfront_porch.typ;
++	u32 vfront_porch = edid->vfront_porch.typ;
++	int mode_flags;
++	u32 pin_polarity;
++	u32 reg;
++
++	pin_polarity = BIT(DCLK_INVERT);
++	if (edid->flags & DISPLAY_FLAGS_HSYNC_HIGH)
++		pin_polarity |= BIT(HSYNC_POSITIVE);
++	if (edid->flags & DISPLAY_FLAGS_VSYNC_HIGH)
++		pin_polarity |= BIT(VSYNC_POSITIVE);
++
++	rkvop_enable_output(dev, mode, port);
++	rkvop_set_pin_polarity(dev, mode, pin_polarity);
++
++	mode_flags = 0;  /* RGB888 */
++	if ((data->features & VOP_FEATURE_OUTPUT_10BIT) &&
++	    mode == VOP_MODE_HDMI)
++		mode_flags = 15;  /* RGBaaa */
++
++	reg = V_DSP_OUT_MODE(mode_flags);
++
++	debug("(%s, %s): bg_dly: %d\n",
++	      dev_read_name(dev), __func__, platdata->bg_dly[port]);
++
++	writel(((platdata->bg_dly[port] + (hactive >> 1) - 1) << 16) | hsync_len,
++	       &post->prescan_htimings);
++
++	writel(V_HSYNC(hsync_len) |
++			V_HORPRD(hsync_len + hback_porch + hactive + hfront_porch),
++			&post->dsp_htotal_hs_end);
++
++	writel(V_HEAP(hsync_len + hback_porch + hactive) |
++			V_HASP(hsync_len + hback_porch),
++			&post->dsp_hact_st_end);
++
++	writel(V_VAEP(vsync_len + vback_porch + vactive) |
++			V_VASP(vsync_len + vback_porch),
++			&post->dsp_vact_st_end);
++
++	writel(V_VSYNC(vsync_len) |
++			V_VERPRD(vsync_len + vback_porch + vactive + vfront_porch),
++			&post->dsp_vtotal_vs_end);
++
++	writel(V_HEAP(hsync_len + hback_porch + hactive) |
++			V_HASP(hsync_len + hback_porch),
++			&post->dsp_hact_info);
++
++	writel(V_VAEP(vsync_len + vback_porch + vactive) |
++			V_VASP(vsync_len + vback_porch),
++			&post->dsp_vact_info);
++
++	/* No scaling */
++	writel(0x10001000, &post->scl_factor_yrgb);
++
++	writel(reg, &post->dsp_ctrl);
++
++	rkvop_cfg_regdone(sysctrl, port);
++}
++
++/**
++ * rk_display_init() - Try to enable the given display device
++ *
++ * This function performs many steps:
++ * - Finds the display device being referenced by @ep_node
++ * - Puts the VOP's ID into its uclass platform data
++ * - Probes the device to set it up
++ * - Reads the timing information (from EDID or panel)
++ * - Sets up the VOP clocks, etc. for the selected pixel clock and display mode
++ * - Enables the display (the display device handles this and will do different
++ *     things depending on the display type)
++ * - Tells the uclass about the display resolution so that the console will
++ *     appear correctly
++ *
++ * @dev:	VOP device that we want to connect to the display
++ * @fbbase:	Frame buffer address
++ * @vp_node:	Device tree node to process
++ * Return: 0 if OK, -ve if something went wrong
++ */
++static int rk_display_init(struct udevice *dev, ulong fbbase, ofnode vp_node)
++{
++	struct rk_vop2_priv *priv = dev_get_priv(dev);
++	struct video_priv *uc_priv = dev_get_uclass_priv(dev);
++	struct rkvop_driverdata *drvdata =
++		(struct rkvop_driverdata *)dev_get_driver_data(dev);
++	struct rkvop_platdata *platdata =
++		(struct rkvop_platdata *)drvdata->platdata;
++	ofnode ep_node;
++	int vop_id, port_id;
++	struct display_timing timing;
++	struct udevice *disp;
++	int ret;
++	u32 remote_phandle;
++	struct display_plat *disp_uc_plat;
++	enum video_log2_bpp l2bpp;
++	ofnode remote;
++	const char *compat;
++	char dclk_name[9];
++	struct clk dclk;
++
++	debug("%s(%s, 0x%lx, %s)\n", __func__,
++	      dev_read_name(dev), fbbase, ofnode_get_name(vp_node));
++
++	port_id = ofnode_read_u32_default(vp_node, "reg", -1);
++	if (port_id < 0) {
++		debug("%s(%s): no video port id\n", __func__, dev_read_name(dev));
++		return port_id;
++	}
++
++	ep_node = ofnode_first_subnode(vp_node);
++	if (!ofnode_valid(ep_node)) {
++		debug("%s(%s): no valid subnode\n", __func__, dev_read_name(dev));
++		return -EINVAL;
++	}
++
++	ret = ofnode_read_u32(ep_node, "remote-endpoint", &remote_phandle);
++	if (ret) {
++		debug("%s(%s): no remote-endpoint\n", __func__, dev_read_name(dev));
++		return ret;
++	}
++
++	remote = ofnode_get_by_phandle(remote_phandle);
++	if (!ofnode_valid(remote))
++		return -EINVAL;
++
++	remote = ofnode_get_parent(remote);
++	if (!ofnode_valid(remote))
++		return -EINVAL;
++
++	/*
++	 * The remote-endpoint references into a subnode of the encoder
++	 * (i.e. HDMI, MIPI, etc.) with the DTS looking something like
++	 * the following:
++	 *
++	 * hdmi: hdmi@fe0a0000 {
++	 *   ports {
++	 *     hdmi_in: port {
++	 *       hdmi_in_vp0: endpoint { ... };
++	 *     }
++	 *   }
++	 * }
++	 *
++	 * This isn't any different from how VOP1 works, so we'll adapt
++	 * the same method of finding the display from the original code
++	 * (find the enclosing device of "UCLASS_DISPLAY")
++	 *
++	 * We also look for UCLASS_VIDEO_BRIDGE so we can use the existing
++	 * DW MIPI DSI driver for Rockchip.
++	 */
++	while (ofnode_valid(remote)) {
++		remote = ofnode_get_parent(remote);
++		if (!ofnode_valid(remote)) {
++			debug("%s(%s): no UCLASS_DISPLAY for remote-endpoint\n",
++			      __func__, dev_read_name(dev));
++			return -EINVAL;
++		}
++
++		uclass_find_device_by_ofnode(UCLASS_DISPLAY, remote, &disp);
++		if (disp)
++			break;
++	};
++	compat = ofnode_get_property(remote, "compatible", NULL);
++	if (!compat) {
++		debug("%s(%s): Failed to find compatible property\n",
++		      __func__, dev_read_name(dev));
++		return -EINVAL;
++	}
++	if (strstr(compat, "edp")) {
++		vop_id = VOP_MODE_EDP;
++	} else if (strstr(compat, "mipi")) {
++		vop_id = VOP_MODE_MIPI;
++	} else if (strstr(compat, "hdmi")) {
++		vop_id = VOP_MODE_HDMI;
++	} else if (strstr(compat, "rk3588-dp")) {
++		vop_id = VOP_MODE_DP;
++	} else if (strstr(compat, "lvds")) {
++		vop_id = VOP_MODE_LVDS;
++	} else {
++		debug("%s(%s): Failed to find vop mode for %s\n",
++		      __func__, dev_read_name(dev), compat);
++		return -EINVAL;
++	}
++	debug("vop_id=%d\n", vop_id);
++	debug("port=%d\n", port_id);
++
++	/* Get the video port clock and enable it */
++	snprintf(dclk_name, sizeof(dclk_name), "dclk_vp%d", port_id);
++	ret = clk_get_by_name(dev, dclk_name, &dclk);
++	if (ret < 0)
++		return ret;
++
++	ret = clk_enable(&dclk);
++	if (ret < 0) {
++		dev_err(dev, "Failed to enable %s: %d\n", dclk_name, ret);
++		return ret;
++	}
++
++	disp_uc_plat = dev_get_uclass_plat(disp);
++	debug("Found device '%s', disp_uc_priv=%p\n", disp->name, disp_uc_plat);
++	if (display_in_use(disp)) {
++		debug("   - device in use\n");
++		return -EBUSY;
++	}
++
++	disp_uc_plat->source_id = vop_id;
++	disp_uc_plat->src_dev = dev;
++
++	ret = device_probe(disp);
++	if (ret) {
++		debug("%s: device '%s' display won't probe (ret=%d)\n",
++		      __func__, dev->name, ret);
++		return ret;
++	}
++
++	ret = display_read_timing(disp, &timing);
++	if (ret) {
++		debug("%s: Failed to read timings\n", __func__);
++		return ret;
++	}
++
++	/* Set clock rate on video port to display timings */
++	ret = clk_set_rate(&dclk, timing.pixelclock.typ);
++	if (ret < 0) {
++		dev_err(dev, "Failed to set clock rate: %d\n", ret);
++		return ret;
++	}
++
++	debug("%s(%s): %s clkrate %lu\n", __func__, dev_read_name(dev),
++	      dclk_name, clk_get_rate(&dclk));
++
++	/* Set bitwidth for vop display according to vop mode */
++	switch (vop_id) {
++	case VOP_MODE_EDP:
++	case VOP_MODE_MIPI:
++	case VOP_MODE_HDMI:
++	case VOP_MODE_DP:
++	case VOP_MODE_LVDS:
++		l2bpp = VIDEO_BPP32;
++		break;
++	default:
++		l2bpp = VIDEO_BPP16;
++	}
++
++	rkvop_enable(dev, fbbase, 1 << l2bpp, &timing, port_id, platdata);
++
++	rkvop_mode_set(dev, &timing, vop_id, port_id, platdata);
++
++	ret = display_enable(disp, 1 << l2bpp, &timing);
++	if (ret)
++		return ret;
++
++	uc_priv->xsize = timing.hactive.typ;
++	uc_priv->ysize = timing.vactive.typ;
++	uc_priv->bpix = l2bpp;
++
++	priv->vp = port_id;
++
++	debug("fb=%lx, size=%d %d\n", fbbase,
++	      uc_priv->xsize, uc_priv->ysize);
++
++	return 0;
++}
++
++int rk_vop2_probe(struct udevice *dev)
++{
++	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
++	struct rk_vop2_priv *priv = dev_get_priv(dev);
++	int ret = 0;
++	ofnode port, node;
++
++	/* Before relocation we don't need to do anything */
++	if (!(gd->flags & GD_FLG_RELOC))
++		return 0;
++
++	if (IS_ENABLED(CONFIG_EFI_LOADER)) {
++		debug("Adding to EFI map %d @ %lx\n", plat->size, plat->base);
++		efi_add_memory_map(plat->base, plat->size, EFI_RESERVED_MEMORY_TYPE);
++	}
++
++	priv->regs = dev_read_addr_ptr(dev);
++
++	/* Try all the ports until we find one that works. */
++	port = dev_read_subnode(dev, "ports");
++	if (!ofnode_valid(port)) {
++		debug("%s(%s): 'port' subnode not found\n",
++		      __func__, dev_read_name(dev));
++		return -EINVAL;
++	}
++
++	for (node = ofnode_first_subnode(port);
++			ofnode_valid(node);
++			node = dev_read_next_subnode(node)) {
++		ret = rk_display_init(dev, plat->base, node);
++		if (ret)
++			debug("Device failed: ret=%d\n", ret);
++		if (!ret)
++			break;
++	}
++	video_set_flush_dcache(dev, true);
++
++	return ret;
++}
++
++int rk_vop2_bind(struct udevice *dev)
++{
++	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
++
++	plat->size = 4 * (CONFIG_VIDEO_ROCKCHIP_MAX_XRES *
++			CONFIG_VIDEO_ROCKCHIP_MAX_YRES);
++
++	return 0;
++}
+diff --git a/drivers/video/rockchip/rk_vop2.h b/drivers/video/rockchip/rk_vop2.h
+new file mode 100644
+index 000000000000..435550b2a31d
+--- /dev/null
++++ b/drivers/video/rockchip/rk_vop2.h
+@@ -0,0 +1,59 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (c) 2017 Theobroma Systems Design und Consulting GmbH
++ */
++
++#ifndef __RK_VOP2_H__
++#define __RK_VOP2_H__
++
++#include <asm/arch-rockchip/vop_rk3568.h>
++
++struct rk_vop2_priv {
++	void *grf;
++	void *regs;
++	int vp;
++};
++
++enum vop_features {
++	VOP_FEATURE_OUTPUT_10BIT = (1 << 0),
++};
++
++struct rkvop_platdata {
++	const u8 delay;
++	const u8 bg_dly[3]; /* VOP2 supports up to 4 video ports (0-3) */
++};
++
++struct rkvop_driverdata {
++	/* configuration */
++	u32 features;
++	void (*platdata);
++	/* block-specific setters/getters */
++	void (*enable_output)(struct udevice *dev, enum vop_modes mode, u32 port);
++	void (*set_pin_polarity)(struct udevice *dev, enum vop_modes mode, u32 port);
++};
++
++/**
++ * rk_vop2_probe() - common probe implementation
++ *
++ * Performs the rk_display_init on each port-subnode until finding a
++ * working port (or returning an error if none of the ports could be
++ * successfully initialised).
++ *
++ * @dev:	device
++ * Return: 0 if OK, -ve if something went wrong
++ */
++int rk_vop2_probe(struct udevice *dev);
++
++/**
++ * rk_vop2_bind() - common bind implementation
++ *
++ * Sets the plat->size field to the amount of memory to be reserved for
++ * the framebuffer: this is always
++ *     (32 BPP) x VIDEO_ROCKCHIP_MAX_XRES x VIDEO_ROCKCHIP_MAX_YRES
++ *
++ * @dev:	device
++ * Return: 0 (always OK)
++ */
++int rk_vop2_bind(struct udevice *dev);
++
++#endif
+-- 
+2.47.1
+
+
+From 4b92500f3da1948f1a43b72e03fa62c54a520715 Mon Sep 17 00:00:00 2001
+From: Dang Huynh <danct12@riseup.net>
+Date: Sun, 23 Feb 2025 19:13:42 +0700
+Subject: [PATCH 06/12] video: rockchip: vop2: Add video bridge support
+
+Add support for video bridge to VOP2 so we can use the MIPI DSI
+bridge driver that we have.
+
+Signed-off-by: Dang Huynh <danct12@riseup.net>
+Reviewed-by: Svyatoslav Ryhel <clamor95@gmail.com>
+---
+ drivers/video/rockchip/rk_vop2.c | 81 +++++++++++++++++++++++---------
+ 1 file changed, 59 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/video/rockchip/rk_vop2.c b/drivers/video/rockchip/rk_vop2.c
+index 14abe316f5b4..ffb6144be540 100644
+--- a/drivers/video/rockchip/rk_vop2.c
++++ b/drivers/video/rockchip/rk_vop2.c
+@@ -13,10 +13,12 @@
+ #include <dm/device_compat.h>
+ #include <edid.h>
+ #include <log.h>
++#include <panel.h>
+ #include <regmap.h>
+ #include <reset.h>
+ #include <syscon.h>
+ #include <video.h>
++#include <video_bridge.h>
+ #include <asm/global_data.h>
+ #include <asm/gpio.h>
+ #include <asm/io.h>
+@@ -254,6 +256,7 @@ static int rk_display_init(struct udevice *dev, ulong fbbase, ofnode vp_node)
+ 	int vop_id, port_id;
+ 	struct display_timing timing;
+ 	struct udevice *disp;
++	struct udevice *bridge;
+ 	int ret;
+ 	u32 remote_phandle;
+ 	struct display_plat *disp_uc_plat;
+@@ -320,8 +323,11 @@ static int rk_display_init(struct udevice *dev, ulong fbbase, ofnode vp_node)
+ 			return -EINVAL;
+ 		}
+ 
++		if (IS_ENABLED(CONFIG_VIDEO_BRIDGE))
++			uclass_find_device_by_ofnode(UCLASS_VIDEO_BRIDGE, remote, &bridge);
++
+ 		uclass_find_device_by_ofnode(UCLASS_DISPLAY, remote, &disp);
+-		if (disp)
++		if (disp || bridge)
+ 			break;
+ 	};
+ 	compat = ofnode_get_property(remote, "compatible", NULL);
+@@ -360,27 +366,49 @@ static int rk_display_init(struct udevice *dev, ulong fbbase, ofnode vp_node)
+ 		return ret;
+ 	}
+ 
+-	disp_uc_plat = dev_get_uclass_plat(disp);
+-	debug("Found device '%s', disp_uc_priv=%p\n", disp->name, disp_uc_plat);
+-	if (display_in_use(disp)) {
+-		debug("   - device in use\n");
+-		return -EBUSY;
+-	}
++	if (bridge) {
++		/* video bridge detected, probe it */
++		ret = device_probe(bridge);
++		if (ret) {
++			dev_err(dev, "Failed to probe video bridge: %d\n", ret);
++			return ret;
++		}
+ 
+-	disp_uc_plat->source_id = vop_id;
+-	disp_uc_plat->src_dev = dev;
++		/* Attach the DSI controller and the display to the bridge. */
++		ret = video_bridge_attach(bridge);
++		if (ret) {
++			dev_err(dev, "Failed to attach video bridge: %d\n", ret);
++			return ret;
++		}
+ 
+-	ret = device_probe(disp);
+-	if (ret) {
+-		debug("%s: device '%s' display won't probe (ret=%d)\n",
+-		      __func__, dev->name, ret);
+-		return ret;
+-	}
++		ret = video_bridge_get_display_timing(bridge, &timing);
++		if (ret) {
++			dev_err(dev, "Failed to read timings: %d\n", ret);
++			return ret;
++		}
++	} else {
++		disp_uc_plat = dev_get_uclass_plat(disp);
++		debug("Found device '%s', disp_uc_priv=%p\n", disp->name, disp_uc_plat);
++		if (display_in_use(disp)) {
++			debug("   - device in use\n");
++			return -EBUSY;
++		}
+ 
+-	ret = display_read_timing(disp, &timing);
+-	if (ret) {
+-		debug("%s: Failed to read timings\n", __func__);
+-		return ret;
++		disp_uc_plat->source_id = vop_id;
++		disp_uc_plat->src_dev = dev;
++
++		ret = device_probe(disp);
++		if (ret) {
++			debug("%s: device '%s' display won't probe (ret=%d)\n",
++			      __func__, dev->name, ret);
++			return ret;
++		}
++
++		ret = display_read_timing(disp, &timing);
++		if (ret) {
++			debug("%s: Failed to read timings\n", __func__);
++			return ret;
++		}
+ 	}
+ 
+ 	/* Set clock rate on video port to display timings */
+@@ -410,9 +438,18 @@ static int rk_display_init(struct udevice *dev, ulong fbbase, ofnode vp_node)
+ 
+ 	rkvop_mode_set(dev, &timing, vop_id, port_id, platdata);
+ 
+-	ret = display_enable(disp, 1 << l2bpp, &timing);
+-	if (ret)
+-		return ret;
++	if (bridge) {
++		/* Attach the DSI controller and the display to the bridge. */
++		ret = video_bridge_set_backlight(bridge, 60);
++		if (ret) {
++			dev_err(dev, "Failed to start the video bridge: %d\n", ret);
++			return ret;
++		}
++	} else {
++		ret = display_enable(disp, 1 << l2bpp, &timing);
++		if (ret)
++			return ret;
++	}
+ 
+ 	uc_priv->xsize = timing.hactive.typ;
+ 	uc_priv->ysize = timing.vactive.typ;
+-- 
+2.47.1
+
+
+From d8350659a00492e1248985cddc7461ddc31c78a8 Mon Sep 17 00:00:00 2001
+From: Dang Huynh <danct12@riseup.net>
+Date: Sun, 23 Feb 2025 19:13:43 +0700
+Subject: [PATCH 07/12] dts: rockchip: rk356x: Prerelocate VOP in U-Boot proper
+
+We need to prerelocate VOP2 memory so the driver can work. This
+will only support U-Boot proper.
+
+Signed-off-by: Dang Huynh <danct12@riseup.net>
+---
+ arch/arm/dts/rk356x-u-boot.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/dts/rk356x-u-boot.dtsi b/arch/arm/dts/rk356x-u-boot.dtsi
+index 354b6958e572..eef5fab86798 100644
+--- a/arch/arm/dts/rk356x-u-boot.dtsi
++++ b/arch/arm/dts/rk356x-u-boot.dtsi
+@@ -128,6 +128,10 @@
+ 	bootph-all;
+ };
+ 
++&vop {
++	bootph-some-ram;
++};
++
+ &uart2m0_xfer {
+ 	bootph-all;
+ };
+-- 
+2.47.1
+
+
+From f4bdde2d75b175d0ade61d9af9b780d69235e8cb Mon Sep 17 00:00:00 2001
+From: Dang Huynh <danct12@riseup.net>
+Date: Sun, 23 Feb 2025 19:13:45 +0700
+Subject: [PATCH 08/12] video: rockchip: Add HDMI support for RK3568
+
+HDMI on RK3568 is mostly simplified, all this does is enabling
+DDC for display timings and HPD.
+
+Signed-off-by: Dang Huynh <danct12@riseup.net>
+---
+ drivers/video/rockchip/Makefile      |  1 +
+ drivers/video/rockchip/rk3568_hdmi.c | 71 ++++++++++++++++++++++++++++
+ 2 files changed, 72 insertions(+)
+ create mode 100644 drivers/video/rockchip/rk3568_hdmi.c
+
+diff --git a/drivers/video/rockchip/Makefile b/drivers/video/rockchip/Makefile
+index d9f2381a2f5e..766303434127 100644
+--- a/drivers/video/rockchip/Makefile
++++ b/drivers/video/rockchip/Makefile
+@@ -12,6 +12,7 @@ obj-$(CONFIG_DISPLAY_ROCKCHIP_EDP) += rk_edp.o
+ obj-$(CONFIG_DISPLAY_ROCKCHIP_LVDS) += rk_lvds.o
+ obj-hdmi-$(CONFIG_ROCKCHIP_RK3288) += rk3288_hdmi.o
+ obj-hdmi-$(CONFIG_ROCKCHIP_RK3399) += rk3399_hdmi.o
++obj-hdmi-$(CONFIG_ROCKCHIP_RK3568) += rk3568_hdmi.o
+ obj-$(CONFIG_DISPLAY_ROCKCHIP_HDMI) += rk_hdmi.o $(obj-hdmi-y)
+ obj-mipi-$(CONFIG_ROCKCHIP_RK3288) += rk3288_mipi.o
+ obj-mipi-$(CONFIG_ROCKCHIP_RK3399) += rk3399_mipi.o
+diff --git a/drivers/video/rockchip/rk3568_hdmi.c b/drivers/video/rockchip/rk3568_hdmi.c
+new file mode 100644
+index 000000000000..5578ea37243a
+--- /dev/null
++++ b/drivers/video/rockchip/rk3568_hdmi.c
+@@ -0,0 +1,71 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (c) 2024 Dang Huynh <danct12@riseup.net>
++ */
++
++#include <display.h>
++#include <dm.h>
++#include <dw_hdmi.h>
++#include <edid.h>
++#include <asm/arch-rockchip/hardware.h>
++#include <asm/arch-rockchip/grf_rk3568.h>
++#include "rk_hdmi.h"
++
++#define RK3568_IO_DDC_IN_MSK             ((3 << 14) | (3 << (14 + 16)))
++
++static int rk3568_hdmi_enable(struct udevice *dev, int panel_bpp,
++			      const struct display_timing *edid)
++{
++	struct rk_hdmi_priv *priv = dev_get_priv(dev);
++
++	return dw_hdmi_enable(&priv->hdmi, edid);
++}
++
++static int rk3568_hdmi_of_to_plat(struct udevice *dev)
++{
++	struct rk_hdmi_priv *priv = dev_get_priv(dev);
++	struct dw_hdmi *hdmi = &priv->hdmi;
++
++	hdmi->i2c_clk_high = 0x71;
++	hdmi->i2c_clk_low = 0x76;
++
++	return rk_hdmi_of_to_plat(dev);
++}
++
++static const char * const rk3568_hdmi_reg_names[] = {
++	"avdd-0v9",
++	"avdd-1v8"
++};
++
++static int rk3568_hdmi_probe(struct udevice *dev)
++{
++	struct rk_hdmi_priv *priv = dev_get_priv(dev);
++	struct rk3568_grf *grf = priv->grf;
++
++	rk_hdmi_probe_regulators(dev, rk3568_hdmi_reg_names,
++				 ARRAY_SIZE(rk3568_hdmi_reg_names));
++
++	writel(RK3568_IO_DDC_IN_MSK, &grf->vo_con1);
++
++	return rk_hdmi_probe(dev);
++}
++
++static const struct dm_display_ops rk3568_hdmi_ops = {
++	.read_edid = rk_hdmi_read_edid,
++	.enable = rk3568_hdmi_enable,
++};
++
++static const struct udevice_id rk3568_hdmi_ids[] = {
++	{ .compatible = "rockchip,rk3568-dw-hdmi" },
++	{ }
++};
++
++U_BOOT_DRIVER(rk3568_hdmi_rockchip) = {
++	.name = "rk3568_hdmi_rockchip",
++	.id = UCLASS_DISPLAY,
++	.of_match = rk3568_hdmi_ids,
++	.ops = &rk3568_hdmi_ops,
++	.of_to_plat = rk3568_hdmi_of_to_plat,
++	.probe = rk3568_hdmi_probe,
++	.priv_auto	= sizeof(struct rk_hdmi_priv),
++};
+-- 
+2.47.1
+
+
+From 24a961b9d1f7af1a420be092be4fe38737db9b9f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20Iwanicki?= <michal.iwanicki@3mdeb.com>
+Date: Thu, 13 Mar 2025 20:29:43 +0100
+Subject: [PATCH 09/12] rockchip: fix vop, mipi dsi & hdmi build errors
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Upstream-Status: Pending
+Signed-off-by: Michał Iwanicki <michal.iwanicki@3mdeb.com>
+---
+ drivers/video/rockchip/dw_mipi_dsi_rockchip.c | 2 ++
+ drivers/video/rockchip/rk3568_hdmi.c          | 2 ++
+ drivers/video/rockchip/rk3568_vop.c           | 1 +
+ 3 files changed, 5 insertions(+)
+
+diff --git a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+index 7fd45a600bf8..13b596500c6e 100644
+--- a/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
++++ b/drivers/video/rockchip/dw_mipi_dsi_rockchip.c
+@@ -182,6 +182,8 @@
+ /* Timeout for regulator on/off, pll lock/unlock & fifo empty */
+ #define TIMEOUT_US	200000
+ 
++#define MSEC_PER_SEC			1000
++
+ enum {
+ 	BANDGAP_97_07,
+ 	BANDGAP_98_05,
+diff --git a/drivers/video/rockchip/rk3568_hdmi.c b/drivers/video/rockchip/rk3568_hdmi.c
+index 5578ea37243a..f7a71f35fd6e 100644
+--- a/drivers/video/rockchip/rk3568_hdmi.c
++++ b/drivers/video/rockchip/rk3568_hdmi.c
+@@ -3,12 +3,14 @@
+  * Copyright (c) 2024 Dang Huynh <danct12@riseup.net>
+  */
+ 
++#include <common.h>
+ #include <display.h>
+ #include <dm.h>
+ #include <dw_hdmi.h>
+ #include <edid.h>
+ #include <asm/arch-rockchip/hardware.h>
+ #include <asm/arch-rockchip/grf_rk3568.h>
++#include <asm/io.h>
+ #include "rk_hdmi.h"
+ 
+ #define RK3568_IO_DDC_IN_MSK             ((3 << 14) | (3 << (14 + 16)))
+diff --git a/drivers/video/rockchip/rk3568_vop.c b/drivers/video/rockchip/rk3568_vop.c
+index 6027e0ce450e..1c1e7339bab8 100644
+--- a/drivers/video/rockchip/rk3568_vop.c
++++ b/drivers/video/rockchip/rk3568_vop.c
+@@ -16,6 +16,7 @@
+ #include <video.h>
+ #include <asm/arch-rockchip/hardware.h>
+ #include <asm/global_data.h>
++#include <asm/io.h>
+ #include <linux/bitfield.h>
+ #include "rk_vop2.h"
+ 
+-- 
+2.47.1
+
+
+From 0dfccf007bee2c08078f0c9e4ac119e34f2f6d3e Mon Sep 17 00:00:00 2001
+From: Svyatoslav Ryhel <clamor95@gmail.com>
+Date: Thu, 20 Feb 2025 19:06:27 +0200
+Subject: [PATCH 10/12] video: bridge-uclass: add get_display_timing ops
+
+Add get_display_timing ops for internal bridges linked to
+panels that do not support EDID (MIPI-DSI panels for example)
+or have EDID not routed.
+
+Signed-off-by: Svyatoslav Ryhel <clamor95@gmail.com>
+Tested-by: Dang Huynh <danct12@riseup.net> (PineTab 2)
+---
+ drivers/video/bridge/video-bridge-uclass.c | 11 +++++++++++
+ include/video_bridge.h                     | 21 +++++++++++++++++++++
+ 2 files changed, 32 insertions(+)
+
+diff --git a/drivers/video/bridge/video-bridge-uclass.c b/drivers/video/bridge/video-bridge-uclass.c
+index f389bc6b1475..17386eacf6ed 100644
+--- a/drivers/video/bridge/video-bridge-uclass.c
++++ b/drivers/video/bridge/video-bridge-uclass.c
+@@ -34,6 +34,17 @@ int video_bridge_attach(struct udevice *dev)
+ 	return ops->attach(dev);
+ }
+ 
++int video_bridge_get_display_timing(struct udevice *dev,
++				    struct display_timing *timings)
++{
++	struct video_bridge_ops *ops = video_bridge_get_ops(dev);
++
++	if (!ops->get_display_timing)
++		return -ENOSYS;
++
++	return ops->get_display_timing(dev, timings);
++}
++
+ int video_bridge_check_attached(struct udevice *dev)
+ {
+ 	struct video_bridge_priv *uc_priv = dev_get_uclass_priv(dev);
+diff --git a/include/video_bridge.h b/include/video_bridge.h
+index 3b429eac578a..7158deb299a3 100644
+--- a/include/video_bridge.h
++++ b/include/video_bridge.h
+@@ -53,6 +53,19 @@ struct video_bridge_ops {
+ 	 */
+ 	int (*set_backlight)(struct udevice *dev, int percent);
+ 
++	/**
++	 * get_display_timing() - Get display timings from bridge.
++	 *
++	 * @dev:	Bridge device containing the linked display timings
++	 * @tim:	Place to put timings
++	 * @return 0 if OK, -ve on error
++	 *
++	 * This call it totally optional and useful mainly for integrated
++	 * bridges with fixed output device.
++	 */
++	int (*get_display_timing)(struct udevice *dev,
++				  struct display_timing *timing);
++
+ 	/**
+ 	 * read_edid() - Read information from EDID
+ 	 *
+@@ -98,6 +111,14 @@ int video_bridge_set_active(struct udevice *dev, bool active);
+  */
+ int video_bridge_check_attached(struct udevice *dev);
+ 
++/**
++ * video_bridge_get_display_timing() - Get display timings from bridge.
++ *
++ * @dev:	Bridge device containing the linked display timings
++ * Return: 0 if OK, -ve on error
++ */
++int video_bridge_get_display_timing(struct udevice *dev,
++				    struct display_timing *timing);
+ /**
+  * video_bridge_read_edid() - Read information from EDID
+  *
+-- 
+2.47.1
+
+
+From 33c0fef26dd7b15bb0f19c9d3f94d00ab79e3235 Mon Sep 17 00:00:00 2001
+From: Svyatoslav Ryhel <clamor95@gmail.com>
+Date: Thu, 20 Feb 2025 19:06:28 +0200
+Subject: [PATCH 11/12] video: bridge: add transparent LVDS de/encoder bridge
+
+Add a simple and transparent LVDS de/encoder driver with a powerdown
+gpio and a power supply.
+
+Signed-off-by: Svyatoslav Ryhel <clamor95@gmail.com>
+---
+ drivers/video/bridge/Kconfig      |   7 ++
+ drivers/video/bridge/Makefile     |   1 +
+ drivers/video/bridge/lvds-codec.c | 128 ++++++++++++++++++++++++++++++
+ 3 files changed, 136 insertions(+)
+ create mode 100644 drivers/video/bridge/lvds-codec.c
+
+diff --git a/drivers/video/bridge/Kconfig b/drivers/video/bridge/Kconfig
+index 2311ca2d1a58..c309c5f4a44d 100644
+--- a/drivers/video/bridge/Kconfig
++++ b/drivers/video/bridge/Kconfig
+@@ -40,3 +40,10 @@ config VIDEO_BRIDGE_SOLOMON_SSD2825
+ 	select VIDEO_MIPI_DSI
+ 	help
+ 	  Solomon SSD2824 SPI RGB-DSI bridge driver wrapped into panel uClass.
++
++config VIDEO_BRIDGE_LVDS_CODEC
++	bool "Transparent LVDS encoders and decoders support"
++	depends on VIDEO_BRIDGE && PANEL && DM_GPIO
++	help
++	  Support for transparent LVDS encoders and decoders that don't
++	  require any configuration.
+diff --git a/drivers/video/bridge/Makefile b/drivers/video/bridge/Makefile
+index 22625c8bc671..f318d848699b 100644
+--- a/drivers/video/bridge/Makefile
++++ b/drivers/video/bridge/Makefile
+@@ -8,3 +8,4 @@ obj-$(CONFIG_VIDEO_BRIDGE_PARADE_PS862X) += ps862x.o
+ obj-$(CONFIG_VIDEO_BRIDGE_NXP_PTN3460) += ptn3460.o
+ obj-$(CONFIG_VIDEO_BRIDGE_ANALOGIX_ANX6345) += anx6345.o
+ obj-$(CONFIG_VIDEO_BRIDGE_SOLOMON_SSD2825) += ssd2825.o
++obj-$(CONFIG_VIDEO_BRIDGE_LVDS_CODEC) += lvds-codec.o
+diff --git a/drivers/video/bridge/lvds-codec.c b/drivers/video/bridge/lvds-codec.c
+new file mode 100644
+index 000000000000..6cd8368a39e5
+--- /dev/null
++++ b/drivers/video/bridge/lvds-codec.c
+@@ -0,0 +1,128 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (c) 2025 Svyatoslav Ryhel <clamor95@gmail.com>
++ * Loosely based on Linux lvds-codec.c driver
++ */
++
++#include <dm.h>
++#include <dm/ofnode_graph.h>
++#include <log.h>
++#include <panel.h>
++#include <video_bridge.h>
++#include <asm/gpio.h>
++#include <power/regulator.h>
++
++struct lvds_codec_priv {
++	struct udevice *panel;
++	struct display_timing timing;
++
++	struct gpio_desc powerdown_gpio;
++	struct udevice *power;
++};
++
++static int lvds_codec_attach(struct udevice *dev)
++{
++	struct lvds_codec_priv *priv = dev_get_priv(dev);
++
++	regulator_set_enable_if_allowed(priv->power, 1);
++	dm_gpio_set_value(&priv->powerdown_gpio, 0);
++
++	return panel_enable_backlight(priv->panel);
++}
++
++static int lvds_codec_set_panel(struct udevice *dev, int percent)
++{
++	struct lvds_codec_priv *priv = dev_get_priv(dev);
++
++	return panel_set_backlight(priv->panel, percent);
++}
++
++static int lvds_codec_panel_timings(struct udevice *dev,
++				    struct display_timing *timing)
++{
++	struct lvds_codec_priv *priv = dev_get_priv(dev);
++
++	memcpy(timing, &priv->timing, sizeof(*timing));
++
++	return 0;
++}
++
++/* Function is purely for sandbox testing */
++static int lvds_codec_read_edid(struct udevice *dev, u8 *buf, int buf_size)
++{
++	return 0;
++}
++
++static int lvds_codec_get_panel(struct udevice *dev)
++{
++	struct lvds_codec_priv *priv = dev_get_priv(dev);
++	int i, ret;
++
++	u32 num = ofnode_graph_get_port_count(dev_ofnode(dev));
++
++	for (i = 0; i < num; i++) {
++		ofnode remote = ofnode_graph_get_remote_node(dev_ofnode(dev), i, -1);
++
++		ret = uclass_get_device_by_of_offset(UCLASS_PANEL,
++						     ofnode_to_offset(remote),
++						     &priv->panel);
++		if (!ret)
++			return 0;
++	}
++
++	/* If this point is reached, no panels were found */
++	return -ENODEV;
++}
++
++static int lvds_codec_probe(struct udevice *dev)
++{
++	struct lvds_codec_priv *priv = dev_get_priv(dev);
++	int ret;
++
++	ret = lvds_codec_get_panel(dev);
++	if (ret) {
++		log_debug("%s: cannot get panel: ret=%d\n", __func__, ret);
++		return log_ret(ret);
++	}
++
++	panel_get_display_timing(priv->panel, &priv->timing);
++
++	ret = gpio_request_by_name(dev, "powerdown-gpios", 0,
++				   &priv->powerdown_gpio, GPIOD_IS_OUT);
++	if (ret) {
++		log_debug("%s: could not get powerdown-gpios (%d)\n", __func__, ret);
++		if (ret != -ENOENT)
++			return log_ret(ret);
++	}
++
++	ret = device_get_supply_regulator(dev, "power-supply", &priv->power);
++	if (ret) {
++		log_debug("%s: power regulator error: %d\n", __func__, ret);
++		if (ret != -ENOENT)
++			return log_ret(ret);
++	}
++
++	return 0;
++}
++
++static const struct video_bridge_ops lvds_codec_ops = {
++	.attach			= lvds_codec_attach,
++	.set_backlight		= lvds_codec_set_panel,
++	.get_display_timing	= lvds_codec_panel_timings,
++	.read_edid		= lvds_codec_read_edid,
++};
++
++static const struct udevice_id lvds_codec_ids[] = {
++	{ .compatible = "lvds-decoder" },
++	{ .compatible = "lvds-encoder" },
++	{ }
++};
++
++U_BOOT_DRIVER(lvds_codec) = {
++	.name		= "lvds_codec",
++	.id		= UCLASS_VIDEO_BRIDGE,
++	.of_match	= lvds_codec_ids,
++	.ops		= &lvds_codec_ops,
++	.probe		= lvds_codec_probe,
++	.priv_auto	= sizeof(struct lvds_codec_priv),
++};
+-- 
+2.47.1
+
+
+From bc61ff98501d9747a21e9e885110dda4a6be5b96 Mon Sep 17 00:00:00 2001
+From: Svyatoslav Ryhel <clamor95@gmail.com>
+Date: Thu, 20 Feb 2025 19:06:29 +0200
+Subject: [PATCH 12/12] test: dm: add video bridge tests
+
+Add tests for video bridge ops.
+
+Signed-off-by: Svyatoslav Ryhel <clamor95@gmail.com>
+---
+ arch/sandbox/dts/test.dts | 46 +++++++++++++++++++++++++++
+ configs/sandbox_defconfig |  2 ++
+ test/dm/Makefile          |  1 +
+ test/dm/video_bridge.c    | 67 +++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 116 insertions(+)
+ create mode 100644 test/dm/video_bridge.c
+
+diff --git a/arch/sandbox/dts/test.dts b/arch/sandbox/dts/test.dts
+index a3a865d65ca5..a1e0950b9400 100644
+--- a/arch/sandbox/dts/test.dts
++++ b/arch/sandbox/dts/test.dts
+@@ -994,6 +994,31 @@
+ 		};
+ 	};
+ 
++	lvds-encoder {
++		compatible = "lvds-encoder";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++
++				bridge_input: endpoint {
++					/* link to output */
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++
++				bridge_output: endpoint {
++					remote-endpoint = <&panel_input>;
++				};
++			};
++		};
++	};
++
+ 	wdt-gpio-toggle {
+ 		gpios = <&gpio_a 8 0>;
+ 		compatible = "linux,wdt-gpio";
+@@ -1335,6 +1360,27 @@
+ 	panel {
+ 		compatible = "simple-panel";
+ 		backlight = <&backlight 0 100>;
++
++		display-timings {
++			timing@0 {
++				/* 1280x800@60Hz */
++				clock-frequency = <68000000>;
++				hactive = <1280>;
++				hfront-porch = <48>;
++				hback-porch = <18>;
++				hsync-len = <30>;
++				vactive = <800>;
++				vfront-porch = <3>;
++				vback-porch = <12>;
++				vsync-len = <5>;
++			};
++		};
++
++		port {
++			panel_input: endpoint {
++				remote-endpoint = <&bridge_output>;
++			};
++		};
+ 	};
+ 
+ 	scsi {
+diff --git a/configs/sandbox_defconfig b/configs/sandbox_defconfig
+index bc5bcb2a6237..487eb41903ca 100644
+--- a/configs/sandbox_defconfig
++++ b/configs/sandbox_defconfig
+@@ -311,6 +311,8 @@ CONFIG_USB_ETH_CDC=y
+ CONFIG_VIDEO=y
+ CONFIG_VIDEO_FONT_SUN12X22=y
+ CONFIG_VIDEO_COPY=y
++CONFIG_VIDEO_BRIDGE=y
++CONFIG_VIDEO_BRIDGE_LVDS_CODEC=y
+ CONFIG_CONSOLE_ROTATION=y
+ CONFIG_CONSOLE_TRUETYPE=y
+ CONFIG_CONSOLE_TRUETYPE_CANTORAONE=y
+diff --git a/test/dm/Makefile b/test/dm/Makefile
+index cb82d839f8a5..ff3116ca1e7d 100644
+--- a/test/dm/Makefile
++++ b/test/dm/Makefile
+@@ -63,6 +63,7 @@ obj-$(CONFIG_SOUND) += i2s.o
+ obj-$(CONFIG_CLK_K210_SET_RATE) += k210_pll.o
+ obj-$(CONFIG_IOMMU) += iommu.o
+ obj-$(CONFIG_LED) += led.o
++obj-$(CONFIG_VIDEO_BRIDGE_LVDS_CODEC) += video_bridge.o
+ obj-$(CONFIG_DM_MAILBOX) += mailbox.o
+ obj-$(CONFIG_DM_MDIO) += mdio.o
+ obj-$(CONFIG_DM_MDIO_MUX) += mdio_mux.o
+diff --git a/test/dm/video_bridge.c b/test/dm/video_bridge.c
+new file mode 100644
+index 000000000000..f55a333c0b8f
+--- /dev/null
++++ b/test/dm/video_bridge.c
+@@ -0,0 +1,67 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Test for video bridge uclass
++ *
++ * Copyright (c) 2025 Svyatoslav Ryhel <clamor95@gmail.com>
++ */
++
++#include <backlight.h>
++#include <dm.h>
++#include <panel.h>
++#include <video.h>
++#include <video_bridge.h>
++#include <asm/gpio.h>
++#include <asm/test.h>
++#include <dm/test.h>
++#include <power/regulator.h>
++#include <test/test.h>
++#include <test/ut.h>
++
++/* Basic test of the video uclass, test is based on driven panel */
++static int dm_test_video_bridge(struct unit_test_state *uts)
++{
++	struct udevice *dev, *pwm, *gpio, *reg;
++	uint period_ns, duty_ns;
++	bool enable, polarity;
++	struct display_timing timing;
++
++	ut_assertok(uclass_first_device_err(UCLASS_VIDEO_BRIDGE, &dev));
++	ut_assertok(uclass_get_device_by_name(UCLASS_PWM, "pwm", &pwm));
++	ut_assertok(uclass_get_device(UCLASS_GPIO, 1, &gpio));
++	ut_assertok(regulator_get_by_platname("VDD_EMMC_1.8V", &reg));
++	ut_assertok(sandbox_pwm_get_config(pwm, 0, &period_ns, &duty_ns,
++					   &enable, &polarity));
++	ut_asserteq(false, enable);
++	ut_asserteq(true, regulator_get_enable(reg));
++
++	/* bridge calls panel_enable_backlight() of panel */
++	ut_assertok(video_bridge_attach(dev));
++	ut_assertok(sandbox_pwm_get_config(pwm, 0, &period_ns, &duty_ns,
++					   &enable, &polarity));
++	ut_asserteq(1000, period_ns);
++	ut_asserteq(170 * 1000 / 255, duty_ns);
++	ut_asserteq(true, enable);
++	ut_asserteq(false, polarity);
++	ut_asserteq(1, sandbox_gpio_get_value(gpio, 1));
++	ut_asserteq(true, regulator_get_enable(reg));
++
++	/* bridge calls panel_set_backlight() of panel */
++	ut_assertok(video_bridge_set_backlight(dev, BACKLIGHT_DEFAULT));
++	ut_assertok(sandbox_pwm_get_config(pwm, 0, &period_ns, &duty_ns,
++					   &enable, &polarity));
++	ut_asserteq(true, enable);
++	ut_asserteq(170 * 1000 / 255, duty_ns);
++
++	/* bridge should be active */
++	ut_assertok(video_bridge_set_active(dev, true));
++
++	/* bridge is internal and has no hotplug gpio */
++	ut_asserteq(-ENOENT, video_bridge_check_attached(dev));
++
++	/* check passing timings and EDID */
++	ut_assertok(video_bridge_get_display_timing(dev, &timing));
++	ut_assertok(video_bridge_read_edid(dev, NULL, 0));
++
++	return 0;
++}
++DM_TEST(dm_test_video_bridge, UTF_SCAN_PDATA | UTF_SCAN_FDT);
+-- 
+2.47.1
+
