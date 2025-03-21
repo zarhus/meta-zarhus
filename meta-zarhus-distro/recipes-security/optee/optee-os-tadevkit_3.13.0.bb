@@ -4,6 +4,8 @@ SUMMARY = "OP-TEE Trusted OS TA devkit"
 DESCRIPTION = "OP-TEE TA devkit for build TAs"
 HOMEPAGE = "https://www.op-tee.org/"
 
+do_compile[depends] += "keys-recipe:do_prepare_elf"
+
 # nooelint: oelint.task.nocopy
 do_install() {
     # install TA devkit

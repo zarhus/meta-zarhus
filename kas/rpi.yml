@@ -6,6 +6,12 @@ repos:
   meta-raspberrypi:
     url: https://git.yoctoproject.org/meta-raspberrypi
     refspec: scarthgap
+  meta-arm:
+    url: https://git.yoctoproject.org/git/meta-arm
+    refspec: 6e9525115bd45c86e241d62a4af069f7b1b8b973
+    layers:
+      meta-arm:
+      meta-arm-toolchain:
 
 local_conf_header:
   rpi-config: |

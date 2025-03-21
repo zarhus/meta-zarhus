@@ -11,7 +11,11 @@ require optee.inc
 
 CVE_PRODUCT = "linaro:op-tee op-tee:op-tee_os"
 
+export TA_SIGN_KEY="${DEPLOY_DIR_IMAGE}/keys/rsa2048.pem"
+export TA_PUBLIC_KEY="${DEPLOY_DIR_IMAGE}/keys/rsa2048_pub.pem"
+
 DEPENDS:append = " python3-pyelftools-native python3-cryptography-native"
+DEPENDS:append = " gcc-aarch64-none-elf-native"
 
 DEPENDS += "python3-pycryptodome-native"
 DEPENDS:append:toolchain-clang = " compiler-rt"
@@ -27,19 +31,28 @@ EXTRA_OEMAKE += " \
     CROSS_COMPILE_core=${HOST_PREFIX} \
     CROSS_COMPILE_ta_${OPTEE_ARCH}=${HOST_PREFIX} \
     NOWERROR=1 \
-    ta-targets=ta_${OPTEE_ARCH} \
     O=${B} \
 "
 EXTRA_OEMAKE += " HOST_PREFIX=${HOST_PREFIX}"
 EXTRA_OEMAKE += " CROSS_COMPILE64=${HOST_PREFIX}"
+EXTRA_OEMAKE:append = " CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1"
 
 LDFLAGS[unexport] = "1"
 CPPFLAGS[unexport] = "1"
 AS[unexport] = "1"
 LD[unexport] = "1"
 
+DEPENDS:append = " gcc-aarch64-none-elf-native"
+
+EXTRA_OEMAKE:remove = " CROSS_COMPILE_core=${HOST_PREFIX}"
+EXTRA_OEMAKE:remove = " CROSS_COMPILE_ta_${OPTEE_ARCH}=${HOST_PREFIX}"
+
+EXTRA_OEMAKE:append = " CROSS_COMPILE_core=aarch64-none-elf- "
+EXTRA_OEMAKE:append = " CROSS_COMPILE_ta_${OPTEE_ARCH}=aarch64-none-elf- "
+
 do_compile:prepend() {
-    PLAT_LIBGCC_PATH=$(${CC} -print-libgcc-file-name)
+    PLAT_LIBGCC_PATH=$(aarch64-none-elf-gcc -print-libgcc-file-name)
+    export PLAT_LIBGCC_PATH
 }
 
 do_compile() {

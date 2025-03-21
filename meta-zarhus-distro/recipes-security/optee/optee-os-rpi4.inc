@@ -1,9 +1,30 @@
 COMPATIBLE_MACHINE = "raspberrypi4-64"
 OPTEEMACHINE = "rpi4"
+
+# These arguments are set based on the CROSSCON Hypervisor rpi4-ws demo
 EXTRA_OEMAKE += " \
-    PLATFORM_FLAVOR=rk3566 \
+    PLATFORM=${OPTEEMACHINE} \
+    ARCH=arm \
     CFG_ARM64_core=y \
-    "
+    CFG_SHMEM_START=0x08000000 \
+    CFG_SHMEM_SIZE=0x00200000 \
+    CFG_TZDRAM_START=0x10100000 \
+    CFG_TZDRAM_SIZE=0x00F00000 \
+    CFG_CORE_DYN_SHM=n \
+    CFG_CORE_RESERVED_SHM=y \
+    CFG_CORE_ASYNC_NOTIF=n \
+    CFG_GIC=y \
+    CFG_ARM_GICV2=y \
+    CFG_CORE_IRQ_IS_NATIVE_INTR=n \
+    CFG_USER_TA_TARGETS=ta_arm64 \
+    CFG_DT=n \
+    CFG_CORE_ASLR=n \
+    CFG_CORE_WORKAROUND_SPECTRE_BP=n \
+    CFG_CORE_WORKAROUND_NSITR_CACHE_PRIME=n \
+    CFG_TEE_CORE_LOG_LEVEL=1 \
+    DEBUG=1 \
+    CFG_PKCS11_TA=n \
+"
 
 export TA_SIGN_KEY="${DEPLOY_DIR_IMAGE}/keys/rsa2048.pem"
 export TA_PUBLIC_KEY="${DEPLOY_DIR_IMAGE}/keys/rsa2048_pub.pem"
