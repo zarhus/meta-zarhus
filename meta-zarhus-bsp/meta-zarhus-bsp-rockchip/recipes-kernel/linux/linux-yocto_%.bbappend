@@ -29,3 +29,4 @@ do_configure:append() {
 }
 
 COMPATIBLE_MACHINE:orangepi-cm4 = "orangepi-cm4"
+COMPATIBLE_MACHINE:radxa-cm3 = "radxa-cm3"
