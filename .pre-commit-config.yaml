@@ -2,7 +2,15 @@
 default_stages: [pre-commit]
 
 default_install_hook_types: [pre-commit, commit-msg]
-exclude: .*\.(patch)|(diff)$|CHANGELOG.md|^(meta-zarhus-distro/classes-recipe/)|^(meta-zarhus-distro/recipes-devtools/rust/)
+exclude: |
+  (?x)^(
+    .*\.patch|
+    .*\.diff|
+    .*\.ppm|
+    CHANGELOG.md|
+    meta-zarhus-distro/classes-recipe/.*|
+    meta-zarhus-distro/recipes-devtools/rust/.*
+  )$
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
