@@ -3,6 +3,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += "\
     ${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'file://${SPLASH_IMAGE}', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'file://enable-splash.cfg', '', d)} \
+    file://vop2_support.patch \
     "
 SPLASH_IMAGE = "zarhus-logo.bmp"
 
