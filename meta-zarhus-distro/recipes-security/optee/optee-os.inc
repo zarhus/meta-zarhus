@@ -16,7 +16,7 @@ DEPENDS:append = " python3-pyelftools-native python3-cryptography-native"
 DEPENDS += "python3-pycryptodome-native"
 DEPENDS:append:toolchain-clang = " compiler-rt"
 
-SRC_URI = "git://github.com/crosscon/optee_os.git;branch=master;protocol=https"
+SRC_URI = "git://github.com/crosscon/optee_os.git;branch=crosscon;protocol=https"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
