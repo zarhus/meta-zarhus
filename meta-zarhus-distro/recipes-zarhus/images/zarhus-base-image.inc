@@ -1,6 +1,9 @@
 SUMMARY = "zarhus image"
 
-IMAGE_FEATURES += "ssh-server-openssh"
+IMAGE_FEATURES += " \
+    ssh-server-openssh \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'splash', '', d)} \
+    "
 
 LICENSE = "MIT"
 
