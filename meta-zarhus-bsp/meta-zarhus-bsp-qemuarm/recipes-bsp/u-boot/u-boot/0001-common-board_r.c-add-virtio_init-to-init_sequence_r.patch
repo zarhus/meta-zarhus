@@ -1,0 +1,41 @@
+From 8194c5d1a4f5b9ac9e182b9ec511322e99c1e1e0 Mon Sep 17 00:00:00 2001
+From: Kas User <kas@example.com>
+Date: Sun, 23 Mar 2025 03:06:13 +0000
+Subject: [PATCH] common/board_r.c: add virtio_init to init_sequence_r
+
+to allow virtio-gpu to be selected as vidconsole
+
+Signed-off-by: Kas User <kas@example.com>
+Upstream-Status: Pending
+---
+ common/board_r.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/common/board_r.c b/common/board_r.c
+index a7967849dc0..f789c8cd1b5 100644
+--- a/common/board_r.c
++++ b/common/board_r.c
+@@ -66,6 +66,7 @@
+ #include <asm-generic/gpio.h>
+ #include <efi_loader.h>
+ #include <relocate.h>
++#include <virtio.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -653,6 +654,7 @@ static init_fnc_t init_sequence_r[] = {
+ 	 * because PCU resources are crucial for flash access on some boards.
+ 	 */
+ 	pci_init,
++	virtio_init,
+ #endif
+ #ifdef CONFIG_ARCH_EARLY_INIT_R
+ 	arch_early_init_r,
+@@ -700,6 +702,7 @@ static init_fnc_t init_sequence_r[] = {
+ 	 * Do pci configuration
+ 	 */
+ 	pci_init,
++	virtio_init,
+ #endif
+ 	stdio_add_devices,
+ 	jumptable_init,
