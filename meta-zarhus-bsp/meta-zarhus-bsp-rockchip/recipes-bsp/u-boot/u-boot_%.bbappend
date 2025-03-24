@@ -14,6 +14,7 @@ SRC_URI:append = " \
     file://rk3566-orangepi-cm4.dtsi \
     file://vop2_support.patch \
     "
+SRC_URI:append:radxa-cm3 = " ${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'file://enable-hdmi.cfg', '', d)}"
 
 do_configure:prepend() {
     install -m 644 "${WORKDIR}/orangepi-cm4-base-rk3566_defconfig" "${S}/configs"
