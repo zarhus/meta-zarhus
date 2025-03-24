@@ -20,12 +20,16 @@ SRC_URI:append = " \
 SRC_URI:append = " \
     file://rk3566-orangepi-cm4.dtsi \
     file://rk3566-orangepi-cm4-base.dts \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'file://framebuffer.dtsi', '', d)} \
 "
 
 do_configure:append() {
     install -m 644 "${WORKDIR}/rk3566-orangepi-cm4-base.dts" "${S}/arch/arm64/boot/dts/rockchip/"
     install -m 644 "${WORKDIR}/rk3566-orangepi-cm4.dtsi" "${S}/arch/arm64/boot/dts/rockchip/"
     echo 'dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-orangepi-cm4.dtb' >> "${S}/arch/arm64/boot/dts/rockchip/Makefile"
+    if [ "${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'yes', 'no', d)}" = "yes" ]; then
+        cat "${WORKDIR}/framebuffer.dtsi" >> "${S}/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts"
+    fi
 }
 
 COMPATIBLE_MACHINE:orangepi-cm4 = "orangepi-cm4"
