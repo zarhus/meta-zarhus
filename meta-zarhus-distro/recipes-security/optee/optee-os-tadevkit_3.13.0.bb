@@ -8,11 +8,9 @@ do_compile[depends] += "keys-recipe:do_prepare_elf"
 
 # nooelint: oelint.task.nocopy
 do_install() {
-    # install TA devkit
-    install -d ${D}${includedir}/optee/export-user_ta/
-    for f in ${B}/export-ta_${OPTEE_ARCH}/* ; do
-        cp -aR $f ${D}${includedir}/optee/export-user_ta/
-    done
+    install -d "${D}${includedir}/optee/export-user_ta"
+    cp -aR "${B}/export-ta_arm64/"* \
+           "${D}${includedir}/optee/export-user_ta/"
 }
 
 do_deploy() {

@@ -49,10 +49,13 @@ EXTRA_OEMAKE:remove = " CROSS_COMPILE_ta_${OPTEE_ARCH}=${HOST_PREFIX}"
 
 EXTRA_OEMAKE:append = " CROSS_COMPILE_core=aarch64-none-elf- "
 EXTRA_OEMAKE:append = " CROSS_COMPILE_ta_${OPTEE_ARCH}=aarch64-none-elf- "
+EXTRA_OEMAKE:append = " CROSS_COMPILE_ta_arm64=aarch64-none-elf- "
+EXTRA_OEMAKE:append = " PLATFORM=${OPTEEMACHINE} "
 
 do_compile:prepend() {
     PLAT_LIBGCC_PATH=$(aarch64-none-elf-gcc -print-libgcc-file-name)
     export PLAT_LIBGCC_PATH
+    export PLAT_LIBGCC_PATH="$(aarch64-none-elf-gcc -print-libgcc-file-name)"
 }
 
 do_compile() {
