@@ -7,4 +7,5 @@ IMAGE_INSTALL:append = " \
     packagegroup-core-buildessential \
     optee-os-tadevkit \
     optee-client \
+    optee-test \
 "

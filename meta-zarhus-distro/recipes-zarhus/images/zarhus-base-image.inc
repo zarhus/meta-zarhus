@@ -10,4 +10,5 @@ IMAGE_INSTALL:append = " \
     packagegroup-zarhus-system \
     optee-os-tadevkit \
     optee-client \
+    optee-test \
 "

@@ -1,0 +1,46 @@
+#!/bin/sh
+
+xtest | awk '
+
+    # Escapes special characters so the string can be used literally in a regex
+    function regx_escape_literal(str) {
+        gsub(/[\[\]\^\$\.\*\?\+\{\}\\\(\)\|]/, "\\\\&", str)
+        return str
+    }
+
+    function name(n) {
+        gsub(/\./, " ", n)
+        return n
+    }
+
+    function result(res) {
+        if (res ~ /OK/) {
+            return "PASS"
+        } else if (res ~ /FAILED/) {
+            return "FAIL"
+        }
+    }
+
+    function parse(tname, desc) {
+        has_subtests = 0
+        result_line = "  " regx_escape_literal(tname) " (OK|FAILED)"
+
+        do {
+            getline
+            # If we see an "o" bullet subtest, sub-parse it
+            if ($0 ~ /^o /) {
+                parse($2, desc " : " substr($0, index($0, $3)))
+                has_subtests = 1
+            }
+        } while ($0 !~ result_line)
+
+        if(!has_subtests) {
+            print result($2) ": " name(tname) " - " desc
+        }
+    }
+
+    # A top-level test is indicated by lines starting with "* "
+    /^\* / {
+        parse($2, substr($0, index($0, $3)))
+    }
+'
