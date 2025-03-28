@@ -20,7 +20,7 @@ DEPENDS:append = " gcc-aarch64-none-elf-native"
 DEPENDS += "python3-pycryptodome-native"
 DEPENDS:append:toolchain-clang = " compiler-rt"
 
-SRC_URI = "git://github.com/crosscon/optee_os.git;branch=crosscon;protocol=https"
+SRC_URI = "git://github.com/OP-TEE/optee_os.git;tag=3.20.0;protocol=https"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
