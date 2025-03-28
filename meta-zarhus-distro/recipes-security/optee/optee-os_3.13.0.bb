@@ -4,6 +4,12 @@ DEPENDS:append = " dtc-native"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
+SRC_URI += " \
+    file://0001-add-rpi4-support.patch \
+"
+
 # nooelint: oelint.vars.specific
 MACHINE_OPTEE_OS_REQUIRE:raspberrypi4-64 = "optee-os-rpi4.inc"
 
