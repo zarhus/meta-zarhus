@@ -15,6 +15,7 @@ repos:
 
 local_conf_header:
   rpi-config: |
+    BBMASK += "meta-arm/recipes-security/optee/optee-client_4.1.0.bb"
     WKS_FILE = "sdimage-raspberrypi.wks"
     SERIAL_CONSOLE = "115200 ttyAMA0"
     RPI_EXTRA_CONFIG = "enable_uart=1"

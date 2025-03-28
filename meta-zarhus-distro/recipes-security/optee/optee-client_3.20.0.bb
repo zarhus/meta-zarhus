@@ -2,8 +2,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
 require optee-client.inc
 
-SRCREV = "${AUTOREV}"
-PV     = "3.13.0+git${SRCPV}"
+PV     = "3.20.0+git${SRCPV}"
 
 inherit pkgconfig
 

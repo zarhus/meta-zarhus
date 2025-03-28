@@ -1,7 +1,6 @@
 require optee-test.inc
 
-SRCREV = "${AUTOREV}"
-PV     = "3.13.0+git${SRCPV}"
+PV     = "3.20.0+git${SRCPV}"
 
 COMPATIBLE_MACHINE = "raspberrypi4-64"
 
