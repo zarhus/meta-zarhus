@@ -27,6 +27,8 @@ EXTRA_OEMAKE += " \
     CROSS_COMPILE_HOST=${HOST_PREFIX} \
     CROSS_COMPILE_TA=aarch64-none-elf- \
     O=${B} \
+    CFG_TEE_TA_LOG_LEVEL=4 \
+    DEBUG=4 \
 "
 
 CFLAGS += "-Wno-error=deprecated-declarations"

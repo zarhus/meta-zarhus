@@ -22,6 +22,8 @@ EXTRA_OECMAKE = " \
     -DBUILD_SHARED_LIBS=ON \
     -DCFG_TEE_FS_PARENT_PATH='${localstatedir}/lib/tee' \
     -DWITH_TEEACL=OFF \
+    CFG_TEE_CORE_LOG_LEVEL=4 \
+    DEBUG=4 \
 "
 EXTRA_OECMAKE:append:toolchain-clang = " -DCFG_WERROR=0"
 
