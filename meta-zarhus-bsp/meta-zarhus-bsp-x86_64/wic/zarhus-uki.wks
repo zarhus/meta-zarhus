@@ -1,0 +1,5 @@
+bootloader --timeout=0 --ptable gpt
+
+part /boot --source bootimg-partition --fstype=vfat --label zarhus-boot --align 2048 --uuid ${BOOT_UUID} --active --use-uuid
+
+part / --source rootfs --fstype=ext4 --label rootfs --align 2048 --uuid ${ROOT_UUID} --use-uuid

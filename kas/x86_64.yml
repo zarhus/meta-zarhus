@@ -1,0 +1,19 @@
+---
+header:
+  version: 11
+
+repos:
+  meta-zarhus:
+    layers:
+      meta-zarhus-bsp/meta-zarhus-bsp-x86_64:
+
+local_conf_header:
+  odroid-h4: |
+    # Use systemd and EFI, needed by UKI
+    INIT_MANAGER = "systemd"
+    EFI_PROVIDER = "systemd-boot"
+    MACHINE_FEATURES:append = " efi"
+
+    # Build an initramfs that ukify can merge in
+    INITRAMFS_IMAGE = "core-image-minimal-initramfs"
+

@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure ZarhusOS UEFI boot entry (one-time)
+DefaultDependencies=no
+Requires=local-fs.target
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/zarhus/setup-efi-entry.sh
+# Disable the unit immediately after it succeeds so it runs only once
+ExecStartPost=/usr/bin/systemctl disable %N
+
+[Install]
+WantedBy=multi-user.target
