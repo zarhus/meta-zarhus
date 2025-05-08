@@ -26,3 +26,8 @@ INSANE_SKIP:${PN}-dev += "buildpaths"
 # Supported after op-tee v3.20
 EXTRA_OEMAKE:append = "${@bb.utils.contains('MACHINE_FEATURES', 'optee-spmc-test', \
                                         ' CFG_SPMC_TESTS=y', '' , d)}"
+
+EXTRA_OEMAKE += " \
+    CFG_TEE_CORE_LOG_LEVEL=4 \
+    DEBUG=4 \
+"
