@@ -1,4 +1,3 @@
-
 SUMMARY = "OP-TEE Trusted OS"
 DESCRIPTION = "Open Portable Trusted Execution Environment - Trusted side of the TEE"
 HOMEPAGE = "https://www.op-tee.org/"
@@ -20,7 +19,7 @@ DEPENDS:append = " gcc-aarch64-none-elf-native"
 DEPENDS += "python3-pycryptodome-native"
 DEPENDS:append:toolchain-clang = " compiler-rt"
 
-SRC_URI = "git://github.com/OP-TEE/optee_os.git;tag=3.20.0;protocol=https"
+SRC_URI = "git://github.com/crosscon/optee_os.git;protocol=https"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"

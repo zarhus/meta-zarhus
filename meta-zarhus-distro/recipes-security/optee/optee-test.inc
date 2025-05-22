@@ -12,7 +12,7 @@ DEPENDS:append = " gcc-aarch64-none-elf-native"
 DEPENDS:append = " optee-client optee-os-tadevkit python3-cryptography-native openssl"
 
 SRC_URI = " \
-    git://github.com/OP-TEE/optee_test.git;tag=3.20.0;protocol=https \
+    git://github.com/crosscon/optee_test.git;protocol=https \
     file://run-ptest \
 "
 
