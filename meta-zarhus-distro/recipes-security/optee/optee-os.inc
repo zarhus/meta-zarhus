@@ -19,7 +19,8 @@ DEPENDS:append = " gcc-aarch64-none-elf-native"
 DEPENDS += "python3-pycryptodome-native"
 DEPENDS:append:toolchain-clang = " compiler-rt"
 
-SRC_URI = "git://github.com/crosscon/optee_os.git;protocol=https"
+SRCREV = "d015c528ea711a1f8acf9629e1a2cbf0cb34908c"
+SRC_URI = "git://github.com/crosscon/optee_os.git;branch=crosscon;protocol=https"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
@@ -31,8 +32,6 @@ EXTRA_OEMAKE += " \
     CROSS_COMPILE_ta_${OPTEE_ARCH}=${HOST_PREFIX} \
     NOWERROR=1 \
     O=${B} \
-    CFG_TEE_CORE_LOG_LEVEL=4 \
-    DEBUG=4 \
 "
 EXTRA_OEMAKE += " HOST_PREFIX=${HOST_PREFIX}"
 EXTRA_OEMAKE += " CROSS_COMPILE64=${HOST_PREFIX}"

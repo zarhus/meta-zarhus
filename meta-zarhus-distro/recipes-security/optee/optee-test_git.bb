@@ -1,6 +1,7 @@
+SRCREV = "3cc6173b5812935adb071bd7b7ecfa42cb7cd2c5"
+
 require optee-test.inc
 
-SRCREV = "3cc6173b5812935adb071bd7b7ecfa42cb7cd2c5"
 PV = "3.20.0+git${SRCPV}"
 
 COMPATIBLE_MACHINE = "raspberrypi4-64"
@@ -13,5 +14,13 @@ SRC_URI:append = " \
 
 do_compile[depends] .= " keys-recipe:do_prepare_elf "
 
-export TA_SIGN_KEY="${DEPLOY_DIR_IMAGE}/keys/rsa2048.pem"
-export TA_PUBLIC_KEY="${DEPLOY_DIR_IMAGE}/keys/rsa2048_pub.pem"
+CFLAGS += " -O2"
+
+EXTRA_OEMAKE:append = " \
+    ARCH=aarch64 \
+    PLATFORM_FLAVOR=qemu_armv8a \
+    CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y \
+    DEBUG=0 \
+    CFG_TEE_TA_LOG_LEVEL=0 \
+    CFG_PKCS11_TA=n \
+"

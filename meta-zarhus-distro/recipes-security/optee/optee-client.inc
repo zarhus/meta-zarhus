@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=69663ab153298557a59c67a60a743e5b"
 inherit systemd update-rc.d cmake
 
 SRC_URI = " \
-    git://github.com/crosscon/optee_client.git;protocol=https \
+    git://github.com/crosscon/optee_client.git;branch=master;protocol=https \
     file://tee-supplicant@.service \
     file://tee-supplicant.sh \
 "
@@ -22,8 +22,6 @@ EXTRA_OECMAKE = " \
     -DBUILD_SHARED_LIBS=ON \
     -DCFG_TEE_FS_PARENT_PATH='${localstatedir}/lib/tee' \
     -DWITH_TEEACL=OFF \
-    CFG_TEE_CORE_LOG_LEVEL=4 \
-    DEBUG=4 \
 "
 EXTRA_OECMAKE:append:toolchain-clang = " -DCFG_WERROR=0"
 
