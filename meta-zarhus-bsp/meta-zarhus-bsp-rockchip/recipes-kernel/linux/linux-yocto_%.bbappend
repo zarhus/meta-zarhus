@@ -6,20 +6,7 @@ FRAMEBUFFER_WIDTH = "480"
 FRAMEBUFFER_HEIGHT = "640"
 FRAMEBUFFER_DEPTH = "4"
 
-# reduce kernel attack surface
 SRC_URI:append = " \
-    file://disable-btrfs.cfg \
-    file://disable-bug.cfg \
-    file://disable-debug.cfg \
-    file://disable-ftrace.cfg \
-    file://disable-ikconfig.cfg \
-    file://disable-ip-pnp.cfg \
-    file://disable-kallsyms.cfg \
-    file://disable-kgdb.cfg \
-    file://disable-kprobes.cfg \
-    file://disable-magic.cfg \
-    file://disable-nfs.cfg \
-    file://enable-cmdline-bool.cfg \
     file://enable-debug-stackoverflow.cfg \
     file://rk3566-orangepi-cm4.dtsi \
     file://rk3566-orangepi-cm4-base.dts \
