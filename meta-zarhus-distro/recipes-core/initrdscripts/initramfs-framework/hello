@@ -1,0 +1,9 @@
+#!/bin/sh
+
+hello_enabled() {
+	return 0
+}
+
+hello_run() {
+    echo "Hello from initramfs"
+}
