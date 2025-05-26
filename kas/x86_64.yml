@@ -16,4 +16,3 @@ local_conf_header:
 
     # Build an initramfs that ukify can merge in
     INITRAMFS_IMAGE = "core-image-minimal-initramfs"
-

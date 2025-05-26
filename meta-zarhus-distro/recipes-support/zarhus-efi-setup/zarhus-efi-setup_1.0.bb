@@ -31,3 +31,5 @@ FILES:${PN} += " \
     ${libdir}/zarhus/ \
     ${systemd_system_unitdir}/zarhus-efi-setup.service \
 "
+
+RDEPENDS:${PN} += "efibootmgr"
