@@ -1,3 +1,5 @@
+# File copied over from
+# https://github.com/Dasharo/meta-dts/pull/233/files#diff-c66779846a9c0bfb1628ba7bab9dda7d444531c765f3f426826805c1f1116484R1-R196
 # Unified kernel image (UKI) class
 #
 # This bbclass merges kernel, initrd etc as a UKI standard UEFI binary,
