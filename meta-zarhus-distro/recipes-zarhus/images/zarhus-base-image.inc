@@ -1,15 +1,21 @@
 SUMMARY = "zarhus image"
+LICENSE = "MIT"
 
 IMAGE_FEATURES += " \
     ssh-server-openssh \
     ${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'splash', '', d)} \
     "
 
-LICENSE = "MIT"
+DEPENDS:append = " openssl-native"
 
-inherit core-image
+inherit core-image extrausers
 
+EXTRA_USERS_PARAMS:append = " useradd -p '' -mG sudo user;  passwd-expire user;"
 LAYER_COMMIT_SHA = "${@get_commit_sha(d)}"
+
+IMAGE_INSTALL:append = " \
+    packagegroup-zarhus-system \
+"
 
 def get_commit_sha(d):
     import subprocess, os
@@ -21,7 +27,3 @@ def get_commit_sha(d):
     ).strip()
 
     return sha
-
-IMAGE_INSTALL:append = " \
-    packagegroup-zarhus-system \
-"
