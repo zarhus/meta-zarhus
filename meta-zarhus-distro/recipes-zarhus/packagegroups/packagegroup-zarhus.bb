@@ -18,6 +18,7 @@ RDEPENDS:${PN}-system = " \
     chrony \
     chronyc \
     curl \
+    sudo \
     ${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'psplash', '', d)} \
 "
 
