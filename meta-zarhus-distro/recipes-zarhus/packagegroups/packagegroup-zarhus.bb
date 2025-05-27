@@ -20,6 +20,7 @@ RDEPENDS:${PN}-system = " \
     curl \
     sudo \
     ${@bb.utils.contains('DISTRO_FEATURES', 'splash', 'psplash', '', d)} \
+    cukinia \
 "
 
 RDEPENDS:${PN}-dbg = " \
