@@ -48,8 +48,6 @@ setup_cargo_environment () {
     cargo_common_do_configure
 }
 
-inherit rust-target-config
-
 do_rust_setup_snapshot () {
     for installer in "${WORKDIR}/rust-snapshot-components/"*"/install.sh"; do
         "${installer}" --prefix="${WORKDIR}/rust-snapshot" --disable-ldconfig

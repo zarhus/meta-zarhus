@@ -15,7 +15,7 @@ FILES:${PN}-dbg += "${rustlibdir}/.debug"
 
 RUSTLIB = "-L ${STAGING_DIR_HOST}${rustlibdir}"
 RUST_DEBUG_REMAP = "--remap-path-prefix=${WORKDIR}=${TARGET_DBGSRC_DIR}"
-RUSTFLAGS += "${RUSTLIB} ${RUST_DEBUG_REMAP}"
+RUSTFLAGS:append = " ${RUSTLIB} ${RUST_DEBUG_REMAP}"
 RUSTLIB_DEP ??= "libstd-rs"
 RUST_PANIC_STRATEGY ??= "unwind"
 
@@ -126,33 +126,33 @@ RUST_TARGET_CCLD = "${WRAPPER_DIR}/target-rust-ccld"
 RUST_TARGET_AR = "${WRAPPER_DIR}/target-rust-ar"
 
 create_wrapper_rust () {
-	file="$1"
-	shift
-	extras="$1"
-	shift
-	crate_cc_extras="$1"
-	shift
+    file="$1"
+    shift
+    extras="$1"
+    shift
+    crate_cc_extras="$1"
+    shift
 
-	cat <<- EOF > "${file}"
-	#!/usr/bin/env python3
-	import os, sys
-	orig_binary = "$@"
-	extras = "${extras}"
+    cat <<- EOF > "${file}"
+    #!/usr/bin/env python3
+    import os, sys
+    orig_binary = "$@"
+    extras = "${extras}"
 
-	# Apply a required subset of CC crate compiler flags
-	# when we build a target recipe for a non-bare-metal target.
-	# https://github.com/rust-lang/cc-rs/blob/main/src/lib.rs#L1614
-	if "CRATE_CC_NO_DEFAULTS" in os.environ.keys() and \
-	   "TARGET" in os.environ.keys() and not "-none-" in os.environ["TARGET"]:
-	    orig_binary += "${crate_cc_extras}"
+    # Apply a required subset of CC crate compiler flags
+    # when we build a target recipe for a non-bare-metal target.
+    # https://github.com/rust-lang/cc-rs/blob/main/src/lib.rs#L1614
+    if "CRATE_CC_NO_DEFAULTS" in os.environ.keys() and \
+       "TARGET" in os.environ.keys() and not "-none-" in os.environ["TARGET"]:
+        orig_binary += "${crate_cc_extras}"
 
-	binary = orig_binary.split()[0]
-	args = orig_binary.split() + sys.argv[1:]
-	if extras:
-	    args.append(extras)
-	os.execvp(binary, args)
-	EOF
-	chmod +x "${file}"
+    binary = orig_binary.split()[0]
+    args = orig_binary.split() + sys.argv[1:]
+    if extras:
+        args.append(extras)
+    os.execvp(binary, args)
+    EOF
+    chmod +x "${file}"
 }
 
 WRAPPER_TARGET_CC = "${CC}"
@@ -170,25 +170,25 @@ WRAPPER_TARGET_AR = "${AR}"
 # linker is used by rustc/cargo
 # archiver is used by the build of libstd-rs
 do_rust_create_wrappers () {
-	mkdir -p "${WRAPPER_DIR}"
+    mkdir -p "${WRAPPER_DIR}"
 
-	# Yocto Build / Rust Host C compiler
-	create_wrapper_rust "${RUST_BUILD_CC}" "" "${CRATE_CC_FLAGS}" "${BUILD_CC}"
-	# Yocto Build / Rust Host C++ compiler
-	create_wrapper_rust "${RUST_BUILD_CXX}" "" "${CRATE_CC_FLAGS}" "${BUILD_CXX}"
-	# Yocto Build / Rust Host linker
-	create_wrapper_rust "${RUST_BUILD_CCLD}" "" "" "${BUILD_CCLD}" "${BUILD_LDFLAGS}"
-	# Yocto Build / Rust Host archiver
-	create_wrapper_rust "${RUST_BUILD_AR}" "" "" "${BUILD_AR}"
+    # Yocto Build / Rust Host C compiler
+    create_wrapper_rust "${RUST_BUILD_CC}" "" "${CRATE_CC_FLAGS}" "${BUILD_CC}"
+    # Yocto Build / Rust Host C++ compiler
+    create_wrapper_rust "${RUST_BUILD_CXX}" "" "${CRATE_CC_FLAGS}" "${BUILD_CXX}"
+    # Yocto Build / Rust Host linker
+    create_wrapper_rust "${RUST_BUILD_CCLD}" "" "" "${BUILD_CCLD}" "${BUILD_LDFLAGS}"
+    # Yocto Build / Rust Host archiver
+    create_wrapper_rust "${RUST_BUILD_AR}" "" "" "${BUILD_AR}"
 
-	# Yocto Target / Rust Target C compiler
-	create_wrapper_rust "${RUST_TARGET_CC}" "${WRAPPER_TARGET_EXTRALD}" "${CRATE_CC_FLAGS}" "${WRAPPER_TARGET_CC}" "${WRAPPER_TARGET_LDFLAGS}"
-	# Yocto Target / Rust Target C++ compiler
-	create_wrapper_rust "${RUST_TARGET_CXX}" "${WRAPPER_TARGET_EXTRALD}" "${CRATE_CC_FLAGS}" "${WRAPPER_TARGET_CXX}" "${CXXFLAGS}"
-	# Yocto Target / Rust Target linker
-	create_wrapper_rust "${RUST_TARGET_CCLD}" "${WRAPPER_TARGET_EXTRALD}" "" "${WRAPPER_TARGET_CCLD}" "${WRAPPER_TARGET_LDFLAGS}"
-	# Yocto Target / Rust Target archiver
-	create_wrapper_rust "${RUST_TARGET_AR}" "" "" "${WRAPPER_TARGET_AR}"
+    # Yocto Target / Rust Target C compiler
+    create_wrapper_rust "${RUST_TARGET_CC}" "${WRAPPER_TARGET_EXTRALD}" "${CRATE_CC_FLAGS}" "${WRAPPER_TARGET_CC}" "${WRAPPER_TARGET_LDFLAGS}"
+    # Yocto Target / Rust Target C++ compiler
+    create_wrapper_rust "${RUST_TARGET_CXX}" "${WRAPPER_TARGET_EXTRALD}" "${CRATE_CC_FLAGS}" "${WRAPPER_TARGET_CXX}" "${CXXFLAGS}"
+    # Yocto Target / Rust Target linker
+    create_wrapper_rust "${RUST_TARGET_CCLD}" "${WRAPPER_TARGET_EXTRALD}" "" "${WRAPPER_TARGET_CCLD}" "${WRAPPER_TARGET_LDFLAGS}"
+    # Yocto Target / Rust Target archiver
+    create_wrapper_rust "${RUST_TARGET_AR}" "" "" "${WRAPPER_TARGET_AR}"
 
 }
 
