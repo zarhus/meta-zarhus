@@ -1,0 +1,86 @@
+#!/bin/sh
+
+echo_tty() {
+    if [ -n "$1" ]; then
+        echo "$1" | tee /dev/tty0
+    else
+        tee /dev/tty0
+    fi
+}
+
+error_check() {
+    ret=$?
+    err_msg="$1"
+    if [ $ret != 0 ]; then
+        echo_tty "$err_msg (err=$ret)"
+        fatal ""
+    fi
+}
+
+encrypt_decrypt_enabled() {
+	return 0
+}
+
+encrypt_decrypt_run() {
+    # rd.luks.rootfs cmdline argument
+    if [ -z "$bootparam_rd_luks_rootfs" ]; then
+        return 0;
+    fi
+
+    rd_luks_rootfs="$bootparam_rd_luks_rootfs"
+    # Either PARTLABEL, PARTUUID or path to device
+    if [ "$(echo ${rd_luks_rootfs} | cut -c1-9)" = "PARTUUID=" ]; then
+        root_partuuid=$(echo $rd_luks_rootfs | cut -c10-)
+        rd_luks_rootfs="/dev/disk/by-partuuid/$root_partuuid"
+    elif [ "$(echo ${rd_luks_rootfs} | cut -c1-10)" = "PARTLABEL=" ]; then
+        root_partlabel=$(echo $rd_luks_rootfs | cut -c11-)
+        rd_luks_rootfs="/dev/disk/by-partlabel/$root_partlabel"
+    fi
+    if [ ! -b "$rd_luks_rootfs" ]; then
+        echo_tty "$rd_luks_rootfs doesn't exist or isn't block device"
+        return 1
+    fi
+
+    luks_rootfs_label="luks_$(lsblk -no PARTLABEL "$rd_luks_rootfs")"
+
+    # if rootfs is already encrypted then only decrypt
+    if cryptsetup luksDump "$rd_luks_rootfs" >/dev/null 2>&1; then
+        cryptsetup open --token-only "$rd_luks_rootfs" "$luks_rootfs_label"
+        error_check "Couldn't decrypt $rd_luks_rootfs"
+        return 0
+    fi
+
+    # shellcheck disable=SC3040
+    set -o pipefail
+
+    echo_tty "Preparing to encrypt $rd_luks_rootfs"
+    umount "$rd_luks_rootfs" 2>/dev/null || true
+    rootfs_size="$(lsblk -nbo SIZE "$rd_luks_rootfs")"
+    e2fsck -fp "$rd_luks_rootfs" >/dev/null
+    # reduce fs size to make space for LUKS2 header
+    resize2fs "$rd_luks_rootfs" "$(($rootfs_size/1024/1024-32))M"
+    error_check "Failed to shrink filesystem"
+
+    echo_tty "Encrypting $rd_luks_rootfs"
+    key="tmp_key"
+    dd if=/dev/urandom of="$key" bs=512 count=4 2>/dev/null
+    echo "YES" | cryptsetup reencrypt \
+        --encrypt --type luks2 --key-file "$key" \
+        --reduce-device-size 32M "$rd_luks_rootfs" | echo_tty
+    error_check "Encryption failed"
+    cryptsetup config "$rd_luks_rootfs" --label "$luks_rootfs_label"
+
+    echo_tty "Enrolling TPM device"
+    systemd-cryptenroll --wipe-slot=all --unlock-key-file="$key" \
+        --tpm2-device=auto --tpm2-pcrs="<PCRS>" "$rd_luks_rootfs"
+    error_check "Enrolling TPM failed"
+
+    cryptsetup open --token-only "$rd_luks_rootfs" "$luks_rootfs_label"
+    error_check "Couldn't decrypt $rd_luks_rootfs"
+    echo "n" | e2fsck -f -p "/dev/mapper/luks_rootfs"
+    resize2fs "/dev/mapper/$luks_rootfs_label"
+    echo_tty "Successfully encrypted $rd_luks_rootfs"
+
+    # shellcheck disable=SC3040
+    set +o pipefail
+}

@@ -1,0 +1,19 @@
+---
+header:
+  version: 11
+
+repos:
+  meta-zarhus:
+    layers:
+      meta-zarhus-encryption:
+
+  meta-security:
+    url: https://git.yoctoproject.org/meta-security
+    commit: bc865c5276c2ab4031229916e8d7c20148dfbac3
+    layers:
+      meta-tpm:
+
+local_conf_header:
+  encryption: |
+    DISTRO_FEATURES:append = " security tpm2"
+    INITRAMFS_IMAGE ?= "core-image-minimal-initramfs"
