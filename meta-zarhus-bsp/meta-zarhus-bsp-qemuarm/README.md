@@ -45,3 +45,40 @@ To run QEMU outside of kas shell
 ## Splash
 
 To test splash use `-device virtio-gpu-pci` (without `display sdl,gl=on`).
+
+## Encryption
+
+You need to add TPM device, initramfs and modify arguments passed to kernel:
+
+```sh
+TPM_DIR=$(mktemp -d)
+TPM_ARGS=(
+    -chardev "socket,id=chrtpm,path=${TPM_DIR}/sock"
+    -tpmdev "emulator,id=tpm0,chardev=chrtpm"
+    -device "tpm-tis-device,tpmdev=tpm0"
+)
+swtpm socket --tpm2 \
+    --tpmstate dir="${TPM_DIR}" \
+    --ctrl type=unixio,path="${TPM_DIR}/sock" \
+    --pid file="${TPM_DIR}/pid" \
+    --log level=5 &> "${TPM_DIR}/log" &
+
+qemu-system-arm -device virtio-net-device,netdev=net0 \
+    -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22 \
+    -object rng-random,filename=/dev/urandom,id=rng0 -device virtio-rng-pci,rng=rng0 \
+    -drive id=disk0,file=build/tmp/deploy/images/qemuarm-uboot/zarhus-base-image-debug-qemuarm-uboot.rootfs.wic,if=none,format=raw \
+    -device virtio-blk-device,drive=disk0 -device qemu-xhci -device usb-tablet \
+    -device usb-kbd -machine virt,highmem=off -cpu cortex-a15 -smp 4 -m 1G \
+    -serial mon:stdio -nographic -device virtio-gpu-pci \
+    -bios build/tmp/deploy/images/qemuarm-uboot/u-boot.bin \
+    -kernel build/tmp/deploy/images/qemuarm-uboot/zImage \
+    -initrd build/tmp/deploy/images/qemuarm-uboot/core-image-minimal-initramfs-qemuarm-uboot.cpio.gz \
+    -append 'root=LABEL=root rd.luks.rootfs=PARTLABEL=root rw ip=dhcp console=ttyAMA0 console=hvc0 swiotlb=0' \
+    "${TPM_ARGS[@]}"
+```
+
+* `root=LABEL=root` - after encryption rootfs can only be found by `LABEL`,
+  `UUID` or by `/dev/mapper/<mapped_name>`. `PARTUUID` and `PARTLABEL` will
+  point to encrypted device instead
+* `rd.luks.rootfs=PARTLABEL=root` - used by encryption/decryption to find device
+  to be encrypted/decrypted. Use `PARTUUID`, `PARTLABEL` or `/dev/<device>`
