@@ -1,0 +1,65 @@
+From 244af28a3af27f2232266503610e965afad3686d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20Iwanicki?= <michal.iwanicki@3mdeb.com>
+Date: Tue, 25 Mar 2025 00:53:56 +0100
+Subject: [PATCH] board: qemu-arm.c: Add virtio splash location
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Michał Iwanicki <michal.iwanicki@3mdeb.com>
+Upstream-Status: Pending
+---
+ board/emulation/qemu-arm/qemu-arm.c | 18 ++++++++++++++++++
+ common/splash_source.c              |  3 +++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/board/emulation/qemu-arm/qemu-arm.c b/board/emulation/qemu-arm/qemu-arm.c
+index 942f1fff5717..187318b08ed4 100644
+--- a/board/emulation/qemu-arm/qemu-arm.c
++++ b/board/emulation/qemu-arm/qemu-arm.c
+@@ -9,6 +9,7 @@
+ #include <efi.h>
+ #include <efi_loader.h>
+ #include <fdtdec.h>
++#include <splash.h>
+ #include <init.h>
+ #include <log.h>
+ #include <usb.h>
+@@ -194,3 +195,20 @@ void flash_write32(u32 value, void *addr)
+ {
+ 	asm("str %" __W "1, %0" : "=m"(*(u32 *)addr) : "r"(value));
+ }
++
++#ifdef CONFIG_SPLASH_SCREEN
++static struct splash_location qemu_splash_locations[] = {
++	{
++		.name = "virtio_fs",
++		.storage = SPLASH_STORAGE_VIRTIO,
++		.flags = SPLASH_STORAGE_FS,
++		.devpart = "0:8",
++	},
++};
++
++int splash_screen_prepare(void)
++{
++	return splash_source_load(qemu_splash_locations,
++				  ARRAY_SIZE(qemu_splash_locations));
++}
++#endif
+diff --git a/common/splash_source.c b/common/splash_source.c
+index 7223a1aae788..12d8d625d8e7 100644
+--- a/common/splash_source.c
++++ b/common/splash_source.c
+@@ -159,6 +159,9 @@ static int splash_select_fs_dev(struct splash_location *location)
+ 		else
+ 			res = -ENODEV;
+ 		break;
++	case SPLASH_STORAGE_VIRTIO:
++		res = fs_set_blk_dev("virtio", location->devpart, FS_TYPE_ANY);
++		break;
+ 	default:
+ 		printf("Error: unsupported location storage.\n");
+ 		return -ENODEV;
+-- 
+2.47.1
+

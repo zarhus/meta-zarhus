@@ -1,0 +1,14 @@
+---
+header:
+  version: 11
+
+machine: qemuarm-uboot
+
+repos:
+  meta-zarhus:
+    layers:
+      meta-zarhus-bsp/meta-zarhus-bsp-qemuarm:
+
+bblayers_conf_header:
+  splash: |
+    LOGO_SIZE = "640!x480!"

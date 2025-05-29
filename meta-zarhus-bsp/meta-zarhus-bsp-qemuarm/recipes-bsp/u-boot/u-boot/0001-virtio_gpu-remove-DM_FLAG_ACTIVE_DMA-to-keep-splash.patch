@@ -1,0 +1,21 @@
+From 0c77fb068eac8b4c0a16f477c0c0c6293bb2d7e6 Mon Sep 17 00:00:00 2001
+From: Kas User <kas@example.com>
+Date: Mon, 24 Mar 2025 23:24:49 +0000
+Subject: [PATCH] virtio_gpu: remove DM_FLAG_ACTIVE_DMA to keep splash
+
+Signed-off-by: Kas User <kas@example.com>
+Upstream-Status: Pending
+---
+ drivers/virtio/virtio_gpu.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/virtio/virtio_gpu.c b/drivers/virtio/virtio_gpu.c
+index 0b306bb9d2f..dab285a6ebb 100644
+--- a/drivers/virtio/virtio_gpu.c
++++ b/drivers/virtio/virtio_gpu.c
+@@ -298,5 +298,4 @@ U_BOOT_DRIVER(virtio_gpu) = {
+ 	.remove = virtio_reset,
+ 	.ops	= &virtio_gpu_ops,
+ 	.priv_auto	= sizeof(struct virtio_gpu_priv),
+-	.flags	= DM_FLAG_ACTIVE_DMA,
+ };
