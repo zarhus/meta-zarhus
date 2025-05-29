@@ -32,6 +32,42 @@ script downloaded and available in [PATH](https://en.wikipedia.org/wiki/PATH_(va
   > [from GitHub](https://github.com/yoctoproject/bmaptool) if it is not
   > available in your distro.
 
+## Configuration
+
+To configure different features or target machine to build for you can either
+pass `.yml` files and set `KAS_*` variables manually or for easier configuration
+you can use:
+
+```sh
+kas-container menu meta-zarhus/Kconfig
+```
+
+After which you can select desired options
+
+```text
+┌──────────────────────┤ Main menu ├───────────────────────┐
+│                                                          │
+│                        Machine  --->                     │
+│                        Distro  --->                      │
+│                        Features  --->                    │
+│                                                          │
+│  ┌───────┐   ┌─────────────┐   ┌────────┐   ┌────────┐   │
+│  │ Build │   │ Save & Exit │   │  Exit  │   │  Help  │   │
+│  └───────┘   └─────────────┘   └────────┘   └────────┘   │
+│                                                          │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+After saving your first config you can then use `menu`/`build`/`shell` kas
+subcommands without passing config argument e.g.:
+
+```sh
+kas-container menu
+kas-container shell
+kas-container build
+```
+
 ## Build
 
 Depending on which features you want to have in your build, pass the desired

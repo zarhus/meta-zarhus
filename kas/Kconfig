@@ -1,0 +1,51 @@
+config KAS_INCLUDE_COMMON
+	string
+	default "$(KAS_DIR)/common.yml"
+
+source "kas/machine/Kconfig"
+
+menu "Distro"
+
+choice
+	prompt "Select distribution"
+	default ZARHUS_DISTRO
+
+config ZARHUS_DISTRO
+	bool "Distro for Zarhus product"
+
+config ZARHUS_DISTRO_WEBKIT
+	bool "Distro for Zarhus product with WebKit support"
+
+endchoice
+
+config KAS_INCLUDE_DISTRO
+	string
+	default "$(KAS_DIR)/webkit.yml" if ZARHUS_DISTRO_WEBKIT
+
+endmenu
+
+menu "Features"
+
+config DEBUG
+	bool "Debug features"
+	help
+		Add debug features such as passwordless root account, enable additional
+		Linux kernel configs such as debugfs, add applications that might be
+		helpful with debugging such as gdb or devmem
+
+config KAS_INCLUDE_DEBUG
+	string
+	default "$(KAS_DIR)/debug.yml"
+	depends on DEBUG
+
+config CACHE
+	bool "Enable use of cache"
+	help
+		Enable use of remote cache (configured in cache.yml)
+
+config KAS_INCLUDE_CACHE
+	string
+	default "$(KAS_DIR)/cache.yml"
+	depends on CACHE
+
+endmenu

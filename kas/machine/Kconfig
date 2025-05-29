@@ -1,0 +1,33 @@
+menu "Machine"
+
+choice
+	prompt "Which machine/platform to build for"
+	default RADXA_CM3
+
+config ORANGEPI_CM4
+	bool "Orange Pi CM4"
+
+config QUARTZ64_A
+	bool "Quartz64 Model A"
+
+config RADXA_CM3
+	bool "RadxaCM3"
+
+config RPI4
+	bool "Raspberry Pi 4"
+
+endchoice
+
+config KAS_INCLUDE_MACHINE
+	string
+	default "$(MACHINE_DIR)/orangepi-cm4.yml" if ORANGEPI_CM4
+	default "$(MACHINE_DIR)/quartz64-a.yml" if QUARTZ64_A
+	default "$(MACHINE_DIR)/radxa-cm3.yml" if RADXA_CM3
+	default "$(MACHINE_DIR)/raspberrypi4.yml" if RPI4
+
+config KAS_INCLUDE_BSP
+	string
+	default "$(KAS_DIR)/rockchip.yml" if ORANGEPI_CM4 || QUARTZ64_A || RADXA_CM3
+	default "$(KAS_DIR)/rpi.yml" if RPI4
+
+endmenu
