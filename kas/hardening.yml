@@ -1,0 +1,8 @@
+---
+header:
+  version: 11
+
+repos:
+  meta-zarhus:
+    layers:
+      meta-zarhus-features/meta-zarhus-hardening:
