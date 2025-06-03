@@ -2,6 +2,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 DEPENDS += "imagemagick-native"
 SPLASH_STEM = "logo-${PV}"
 SPLASH_FILE = "${SPLASH_STEM}.png"
+# nooelint: oelint.vars.mispell # codespell:ignore
 SPLASH_IMAGES = "https://docs.zarhus.com/images/zarhus-logo.svg;name=logo;downloadfilename=${SPLASH_FILE}"
 SRC_URI[logo.sha256sum] = "2ba3358102e2bb27b5c2b21d06e47325aa8238fad629d67ac46b97d8c77ab470"
 SRC_URI += "file://fb.rules"
