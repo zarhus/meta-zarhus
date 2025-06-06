@@ -1,12 +1,14 @@
 inherit uki
 
+# Generic defaults
+UKI_CMDLINE ?= "root=LABEL=rootfs rootwait quiet"
+UKI_FILENAME ?= "zarhus.efi"
+EFI_PROVIDER ?= ""
+IMAGE_EFI_BOOT_FILES ?= "${UKI_FILENAME};EFI/BOOT/bootx64.efi"
+IMAGE_BOOT_FILES     ?= "${IMAGE_EFI_BOOT_FILES}"
+
+# Board-specific tweaks
 UKI_CMDLINE:odroid-h4 = "root=LABEL=rootfs rootwait console=ttyS0,115200 quiet"
-UKI_FILENAME:odroid-h4 = "zarhus.efi"
-
-EFI_PROVIDER:odroid-h4 = ""
-
-IMAGE_EFI_BOOT_FILES:odroid-h4 = "${UKI_FILENAME};EFI/BOOT/bootx64.efi"
-IMAGE_BOOT_FILES:odroid-h4 = "${IMAGE_EFI_BOOT_FILES}"
 
 BOOT_UUID = "${@generate_uuid_from_sha(d, 'boot')}"
 ROOT_UUID = "${@generate_uuid_from_sha(d, 'root')}"
