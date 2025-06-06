@@ -11,6 +11,9 @@ inherit core-image
 
 LAYER_COMMIT_SHA = "${@get_commit_sha(d)}"
 
+# This needed so that the build has diffferent partuuid's from different
+# commits, to prevent booting from incorrect partitions
+
 def get_commit_sha(d):
     import subprocess, os
 
