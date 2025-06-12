@@ -1,2 +1,2 @@
-COMPATIBLE_MACHINE:append = "|odroid-h4"
-KMACHINE:odroid-h4 = "common-pc-64"
+COMPATIBLE_MACHINE:append = "|x86-64"
+KMACHINE:x86-64 = "common-pc-64"

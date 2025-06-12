@@ -8,7 +8,7 @@ repos:
       meta-zarhus-bsp/meta-zarhus-bsp-x86_64:
 
 local_conf_header:
-  odroid-h4: |
+  x86-64: |
     # Use systemd and EFI, needed by UKI
     INIT_MANAGER = "systemd"
     EFI_PROVIDER = "systemd-boot"

@@ -6,7 +6,7 @@ IMAGE_EFI_BOOT_FILES ?= "${UKI_FILENAME};EFI/BOOT/bootx64.efi"
 IMAGE_BOOT_FILES ?= "${IMAGE_EFI_BOOT_FILES}"
 
 # Board-specific tweaks
-UKI_CMDLINE:odroid-h4 = "root=LABEL=rootfs rootwait console=ttyS0,115200 quiet"
+UKI_CMDLINE:x86-64 = "root=LABEL=rootfs rootwait console=ttyS0,115200 quiet"
 
 BOOT_UUID = "${@generate_uuid_from_sha(d, 'boot')}"
 ROOT_UUID = "${@generate_uuid_from_sha(d, 'root')}"

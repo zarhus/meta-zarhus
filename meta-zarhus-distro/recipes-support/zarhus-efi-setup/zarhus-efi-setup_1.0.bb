@@ -1,11 +1,11 @@
 SUMMARY = "One-shot systemd service that registers the ZarhusOS UEFI entry"
-DESCRIPTION = "Systemd service that manages boot entries for Zarhus on odroid-h4"
+DESCRIPTION = "Systemd service that manages boot entries for Zarhus on x86-64"
 HOMEPAGE = "https://docs.zarhus.com/"
 
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-COMPATIBLE_MACHINE = "^odroid-h4$"
+COMPATIBLE_MACHINE = "^x86-64$"
 
 SRC_URI = " \
     file://setup-efi-entry.sh \

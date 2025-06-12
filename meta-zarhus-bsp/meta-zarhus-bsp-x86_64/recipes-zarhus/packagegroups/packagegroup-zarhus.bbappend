@@ -1,1 +1,1 @@
-RDEPENDS:${PN}-system:append:odroid-h4 = " zarhus-efi-setup"
+RDEPENDS:${PN}-system:append:x86-64 = " zarhus-efi-setup"
