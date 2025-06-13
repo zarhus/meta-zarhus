@@ -1,9 +1,8 @@
 inherit uki
 
-# Generic defaults (also in uki.bbclass)
 EFI_PROVIDER ?= ""
-IMAGE_EFI_BOOT_FILES ?= "${UKI_FILENAME};EFI/BOOT/bootx64.efi"
-IMAGE_BOOT_FILES ?= "${IMAGE_EFI_BOOT_FILES}"
+IMAGE_EFI_BOOT_FILES = "${UKI_FILENAME};EFI/BOOT/bootx64.efi"
+IMAGE_BOOT_FILES = "${IMAGE_EFI_BOOT_FILES}"
 
 # Board-specific tweaks
 UKI_CMDLINE:x86-64 = "root=LABEL=rootfs rootwait console=ttyS0,115200 quiet"
