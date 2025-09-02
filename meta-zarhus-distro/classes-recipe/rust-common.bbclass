@@ -151,7 +151,7 @@ create_wrapper_rust () {
     if extras:
         args.append(extras)
     os.execvp(binary, args)
-    EOF
+EOF
     chmod +x "${file}"
 }
 

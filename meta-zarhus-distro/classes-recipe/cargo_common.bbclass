@@ -52,14 +52,14 @@ cargo_common_do_configure () {
     paths = [
     $(for p in ${EXTRA_OECARGO_PATHS}; do echo \"$p\",; done)
     ]
-    EOF
+EOF
 
     cat <<- EOF >> ${CARGO_HOME}/config.toml
 
     # Local mirror vendored by bitbake
     [source.bitbake]
     directory = "${CARGO_VENDORING_DIRECTORY}"
-    EOF
+EOF
 
     if [ ${CARGO_DISABLE_BITBAKE_VENDORING} = "0" ]; then
         cat <<- EOF >> ${CARGO_HOME}/config.toml
@@ -67,7 +67,7 @@ cargo_common_do_configure () {
         [source.crates-io]
         replace-with = "bitbake"
         local-registry = "/nonexistent"
-        EOF
+EOF
     fi
 
     cat <<- EOF >> ${CARGO_HOME}/config.toml
@@ -80,14 +80,14 @@ cargo_common_do_configure () {
     # Ignore the hard coded and incorrect path to certificates
     cainfo = "${STAGING_ETCDIR_NATIVE}/ssl/certs/ca-certificates.crt"
 
-    EOF
+EOF
 
     cat <<- EOF >> ${CARGO_HOME}/config.toml
 
     # HOST_SYS
     [target.${RUST_HOST_SYS}]
     linker = "${CARGO_RUST_TARGET_CCLD}"
-    EOF
+EOF
 
     if [ "${RUST_HOST_SYS}" != "${RUST_BUILD_SYS}" ]; then
         cat <<- EOF >> ${CARGO_HOME}/config.toml
@@ -95,7 +95,7 @@ cargo_common_do_configure () {
         # BUILD_SYS
         [target.${RUST_BUILD_SYS}]
         linker = "${RUST_BUILD_CCLD}"
-        EOF
+EOF
     fi
 
     if [ "${RUST_TARGET_SYS}" != "${RUST_BUILD_SYS}" -a "${RUST_TARGET_SYS}" != "${RUST_HOST_SYS}" ]; then
@@ -104,7 +104,7 @@ cargo_common_do_configure () {
         # TARGET_SYS
         [target.${RUST_TARGET_SYS}]
         linker = "${RUST_TARGET_CCLD}"
-        EOF
+EOF
     fi
 
     # Put build output in build directory preferred by bitbake instead of
@@ -115,7 +115,7 @@ cargo_common_do_configure () {
         [build]
         # Use out of tree build destination to avoid polluting the source tree
         target-dir = "${B}/target"
-        EOF
+EOF
     fi
 
     cat <<- EOF >> ${CARGO_HOME}/config.toml
@@ -123,7 +123,7 @@ cargo_common_do_configure () {
     [term]
     progress.when = 'always'
     progress.width = 80
-    EOF
+EOF
 }
 
 python cargo_common_do_patch_paths() {
