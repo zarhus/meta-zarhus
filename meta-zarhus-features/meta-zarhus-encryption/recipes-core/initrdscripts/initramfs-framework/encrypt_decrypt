@@ -72,8 +72,8 @@ encrypt_device() {
     fi
     echo "Encrypting $device_to_encrypt"
     if [ -n "$reencrypt" ]; then
-        printf '%s' "$password" | cryptsetup reencrypt --batch-mode --force-password \
-            --encrypt --type luks2 --reduce-device-size 32M "$device_to_encrypt"
+        printf '%s' "$password" | cryptsetup reencrypt --force-password \
+            --encrypt --type luks2 --reduce-device-size 32M "$device_to_encrypt" 2>/dev/null
     else
         printf '%s' "$password" | cryptsetup luksFormat --batch-mode --force-password \
             --type luks2 "$device_to_encrypt"
@@ -168,8 +168,9 @@ encrypt_decrypt_run() {
         return 0
     fi
 
+    # Encrypt - should get here only once, during first boot.
     password="$(ask_for_password)"
-    error_check "Failed to enter same password multiple times"
+    error_check "Failed to enter the same password multiple times"
     for encrypt in $(echo "$bootparam_rd_luks_encrypt" | tr ',' '\n'); do
         encrypt_part="$(echo "$encrypt" | cut -d'=' -f 1,2)"
         encrypt_flag="$(echo "$encrypt" | cut -d'=' -f 3)"
