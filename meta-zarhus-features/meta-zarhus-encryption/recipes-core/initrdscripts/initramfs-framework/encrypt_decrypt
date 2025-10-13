@@ -26,6 +26,7 @@ ask_for_password() {
         echo "" >&2
         if [ "${_password}" != "${_password2}" ]; then
             echo "Passwords are not the same!" >&2
+            i=$((i+1))
             continue
         fi
         echo "" >&2
