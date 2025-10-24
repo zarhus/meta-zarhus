@@ -1,0 +1,4 @@
+KAS_DIR := kas
+MACHINE_DIR := $(KAS_DIR)/machine
+
+source "kas/Kconfig"
