@@ -58,16 +58,16 @@ software =
 			)
 			images: (
 				{
-					filename = "<OTAB_ROOTFS_IMAGE_NAME>-<MACHINE><OTAB_BOOT_B_IMAGE_FSTYPE>";
-					sha256 = "$swupdate_get_sha256(<OTAB_ROOTFS_IMAGE_NAME>-<MACHINE><OTAB_BOOT_B_IMAGE_FSTYPE>)";
+					filename = "<OTAB_ROOTFS_IMAGE_NAME>-<MACHINE><OTAB_BOOT_A_IMAGE_FSTYPE>";
+					sha256 = "$swupdate_get_sha256(<OTAB_ROOTFS_IMAGE_NAME>-<MACHINE><OTAB_BOOT_A_IMAGE_FSTYPE>)";
 					type = "raw";
 					installed-directly = true;
 					compressed = "zlib";
 					device = "/dev/disk/by-label/<OTAB_LABEL_BOOT_B>";
 				},
 				{
-					filename = "<OTAB_ROOTFS_IMAGE_NAME>-<MACHINE><OTAB_ROOTFS_B_IMAGE_FSTYPE>";
-					sha256 = "$swupdate_get_sha256(<OTAB_ROOTFS_IMAGE_NAME>-<MACHINE><OTAB_ROOTFS_B_IMAGE_FSTYPE>)";
+					filename = "<OTAB_ROOTFS_IMAGE_NAME>-<MACHINE><OTAB_ROOTFS_A_IMAGE_FSTYPE>";
+					sha256 = "$swupdate_get_sha256(<OTAB_ROOTFS_IMAGE_NAME>-<MACHINE><OTAB_ROOTFS_A_IMAGE_FSTYPE>)";
 					type = "raw";
 					installed-directly = true;
 					compressed = "zlib";

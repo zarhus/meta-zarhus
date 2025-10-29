@@ -13,8 +13,13 @@ done
 # Create the stable ZarhusOS entry on the disk
 DISK=$(lsblk -no PKNAME "$(findmnt -nr -o SOURCE /boot)")
 
+part_a=$(realpath "/dev/disk/by-partlabel/<OTAB_LABEL_BOOT_A>")
+part_a=$(printf '%s' "$part_a" | tail -c 1)
+part_b=$(realpath "/dev/disk/by-partlabel/<OTAB_LABEL_BOOT_B>")
+part_b=$(printf '%s' "$part_b" | tail -c 1)
+
 efibootmgr --disk "/dev/$DISK" \
-           --part 1 \
+           --part "${part_a}" \
            --create \
            --label "ZarhusOS A" \
            --loader '\EFI\BOOT\bootx64.efi' \
@@ -22,7 +27,7 @@ efibootmgr --disk "/dev/$DISK" \
            --bootnum "$current_bootnum"
 
 efibootmgr --disk "/dev/$DISK" \
-           --part 2 \
+           --part "${part_b}" \
            --create \
            --label "ZarhusOS B" \
            --loader '\EFI\BOOT\bootx64.efi' \

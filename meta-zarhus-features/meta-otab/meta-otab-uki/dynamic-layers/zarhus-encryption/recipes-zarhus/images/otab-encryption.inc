@@ -6,6 +6,7 @@ IMAGE_INSTALL:append = " e2fsprogs-resize2fs"
 DEPENDS:append = " \
     e2fsprogs-native \
     bc-native \
+    mtools-native \
 "
 
 # Change root= & rd.luks.rootfs= to second rootfs
@@ -32,24 +33,28 @@ do_deploy_partitions() {
     for partition in "$part_dir"/*.direct.p*; do
         partition_basename="$(basename "$partition")"
         ext="${partition_basename##*.}"
+        # get p<x> from .direct.p<x>...
+        rootfs_ext=$(echo "${OTAB_ROOTFS_A_IMAGE_FSTYPE}" | sed -nr 's/.*\.direct\.p([0-9])+.*/p\1/p')
+        bbdebug 1 "rootfs_ext=$rootfs_ext"
         for deploy_ext in ${DEPLOY_PARTITIONS}; do
+            bbdebug 1 "deploy_ext=$deploy_ext, ext=$ext"
             if [ "$deploy_ext" = "$ext" ]; then
-                if [ "$ext" = "p3" ] || [ "$ext" = "p4" ]; then
-                    cp "${partition}" "${partition}-resized"
-                    partition="${partition}-resized"
+                cp "${partition}" "${partition}-copy"
+                partition="${partition}-copy"
+                if [ "$ext" = "$rootfs_ext" ]; then
                     bbdebug 1 "shrinking ${partition} by 32 MB"
                     device_size="$(stat -c '%s' "${partition}")"
                     e2fsck -fp "${partition}"
                     resize2fs "${partition}" "$(echo "${device_size}/1024/1024-32" | bc)M" -f
                     e2fsck -fp "${partition}"
                 fi
+                bbdebug 1 "Setting label and UUID"
+                set_label_and_uuid "$partition"
                 bbdebug 1 "gzipping ${partition}"
                 gzip --force --keep -9 "$partition"
                 partition_image_basename="${IMAGE_BASENAME}-${MACHINE}.direct.$ext"
                 mv "${partition}.gz" "${DEPLOY_DIR_IMAGE}/${partition_image_basename}.gz"
-                if [ "$ext" = "p3" ] || [ "$ext" = "p4" ]; then
-                    rm "${partition}"
-                fi
+                rm "${partition}"
                 break
             fi
         done

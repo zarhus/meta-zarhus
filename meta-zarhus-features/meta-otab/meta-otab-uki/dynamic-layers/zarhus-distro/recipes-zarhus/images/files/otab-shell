@@ -6,6 +6,21 @@
 
 UPDATE_DEV_SYMLINK="/otab-device"
 
+error_exit() {
+    err_msg=$1
+    err_code=${2:-1}
+    echo "$err_msg" >&2
+    exit "$err_code"
+}
+
+error_check() {
+    ret=$?
+    msg="$1"
+    if [ "$ret" -ne 0 ]; then
+        error_exit "$msg (error code=$ret)" "$ret"
+    fi
+}
+
 do_preinst()
 {
     echo "do_preinst"
@@ -17,8 +32,7 @@ do_postinst()
     otab_label="$1"
     echo "do_postinst"
     if [ -z "$otab_label" ]; then
-        echo "OTAB_LABEL not given through the 'data' attribute in sw-description"
-        exit 1
+        error_exit "OTAB_LABEL not given through the 'data' attribute in sw-description"
     fi
 
     e2fsck -fp "$UPDATE_DEV_SYMLINK" >/dev/null 2>&1 && resize2fs "$UPDATE_DEV_SYMLINK" >/dev/null 2>&1
@@ -26,23 +40,73 @@ do_postinst()
     case "$otab_label" in
     "<OTAB_LABEL_ROOTFS_A>")
         next_boot="ZarhusOS A"
+        boot_label="<OTAB_LABEL_BOOT_A>"
+        boot_uuid="<BOOT_A_UUID>"
+        root_label="<OTAB_LABEL_ROOTFS_A>"
+        root_uuid="<ROOT_A_UUID>"
         ;;
     "<OTAB_LABEL_ROOTFS_B>")
         next_boot="ZarhusOS B"
+        boot_label="<OTAB_LABEL_BOOT_B>"
+        boot_uuid="<BOOT_B_UUID>"
+        root_label="<OTAB_LABEL_ROOTFS_B>"
+        root_uuid="<ROOT_B_UUID>"
         ;;
     *)
-        echo "Unknown Label: $otab_label"
-        exit 1
+        error_exit "Unknown Label: $otab_label"
         ;;
     esac
+    if [ ! -b "/dev/disk/by-label/<BOOT_TMP_LABEL>" ]; then
+        error_exit "Can't find boot partition by label"
+    elif [ ! -b "/dev/disk/by-label/<ROOT_TMP_LABEL>" ]; then
+        error_exit "Can't find rootfs partition by label"
+    fi
+    boot_dev="$(realpath "/dev/disk/by-label/<BOOT_TMP_LABEL>")"
+    root_dev="$(realpath "/dev/disk/by-label/<ROOT_TMP_LABEL>")"
+    mkdir -p /tmp/root_b
+    mount "${root_dev}" /tmp/root_b
+    # In case otab-shell requires new packages available only on updated slot
+    export PATH="/tmp/root_b/sbin:/tmp/root_b/bin:${PATH}"
+    # needed by mlabel if current system doesn't have one
+    export GCONV_PATH="/tmp/root_b/lib/gconv"
+    update_boot_part
+    update_root_part
 
+    umount /tmp/root_b
     boot_num=$(efibootmgr | grep -om1 "Boot.* ${next_boot}" | sed -r 's/Boot([0-9]+).*/\1/')
     if ! efibootmgr --bootnext "$boot_num" >/dev/null; then
-        echo "Failed to set $next_boot as next boot"
-        exit 1
+        error_exit "Failed to set $next_boot as next boot"
     fi
 
     exit 0
+}
+
+update_boot_part() {
+    mlabel -i "${boot_dev}" -N "${boot_uuid}" ::
+    error_check "Failed to set boot filesystem volume ID"
+    # mlabel doesn't allow lower case characters
+    fatlabel "${boot_dev}" "${boot_label}" 2>/dev/null
+    error_check "Failed to set boot filesystem label"
+    mount "${boot_dev}" /mnt
+    error_check "Mounting ${boot_label} failed"
+    objcopy --dump-section .cmdline=/tmp/cmdline /mnt/EFI/BOOT/bootx64.efi
+    error_check "Extracting command-line failed"
+    sed -ri \
+        -e "s/root=[^ ]+/root=LABEL=${root_label}/" \
+        -e "s/rd\.luks\.rootfs=[^ ]+/rd.luks.rootfs=PARTLABEL=${root_label}/" \
+        /tmp/cmdline
+    objcopy --update-section .cmdline=/tmp/cmdline /mnt/EFI/BOOT/bootx64.efi
+    error_check "Replacing command-line failed"
+    umount /mnt
+}
+
+update_root_part() {
+    tune2fs "${root_dev}" -L "${root_label}" -U "${root_uuid}" >/dev/null
+    error_check "Failed to update label and UUID of ${root_label}"
+    mount "${root_dev}" /mnt
+    error_check "Failed to mount ${root_label}"
+    sed -ri "s|(.*)\s/boot\s|LABEL=${boot_label} /boot |" /mnt/etc/fstab
+    umount /mnt
 }
 
 case "$1" in

@@ -1,0 +1,105 @@
+#!/bin/sh
+
+error_check() {
+    ret=$?
+    err_msg="$1"
+    if [ $ret != 0 ]; then
+        echo "$err_msg (err=$ret)"
+        sh
+        fatal "$err_msg (err=$ret)"
+    fi
+}
+
+create_partitions_enabled() {
+	return 0
+}
+
+# create rwoverlay partition on first boot.
+create_partitions_run() {
+    if [ ! -b "/dev/disk/by-partlabel/<OTAB_LABEL_ROOTFS_B>" ]; then
+        # shellcheck disable=SC3040
+        set -o pipefail
+        create_boot
+        create_rootfs
+        create_overlay
+        # shellcheck disable=SC3040
+        set +o pipefail
+    fi
+}
+
+create_boot() {
+    partition_a="/dev/disk/by-partlabel/<OTAB_LABEL_BOOT_A>"
+    partition_b="/dev/disk/by-partlabel/<OTAB_LABEL_BOOT_B>"
+    disk="$(lsblk -no pkname "$partition_a")"
+    size="$(lsblk -no size "$partition_a")"
+    echo "Creating <OTAB_LABEL_BOOT_B> partition"
+    # 1st - create new partition, use recommended values
+    # 2nd - set partlabel of last (default) partition to <OTAB_LABEL_ROOTFS_OVERLAY>
+    # 3rd - change partition to EFI type
+    printf '%s\n' "n" "" "" "+${size}" "x" "n" "" "<OTAB_LABEL_BOOT_B>" "r" "t" "1" "1" "w" |
+        fdisk "/dev/$disk" >/dev/null 2>&1
+    error_check "Failed to create new partition on /dev/$disk"
+    sleep 2
+    echo "Cloning <OTAB_LABEL_BOOT_A> to <OTAB_LABEL_BOOT_B>"
+    dd if="$partition_a" of="$partition_b" bs=1M >/dev/null 2>&1
+    error_check "Cloning failed."
+    echo "Updating label and volume ID"
+    mlabel -i "$partition_b" -N "<BOOT_B_UUID>" ::
+    error_check "Failed to generate new volume ID"
+    # mlabel doesn't allow lower case characters
+    fatlabel "$partition_b" "<OTAB_LABEL_BOOT_B>" 2>/dev/null
+    error_check "Failed to change label to <OTAB_LABEL_BOOT_B>"
+    echo "Updating UKI file"
+    mkdir -p /mnt
+    mount "$partition_b" /mnt
+    error_check "Mounting <OTAB_LABEL_BOOT_B> failed"
+    objcopy --dump-section .cmdline=cmdline /mnt/EFI/BOOT/bootx64.efi
+    error_check "Extracting <OTAB_LABEL_BOOT_A> command-line failed"
+    sed -ri \
+        -e 's/root=[^ ]+/root=LABEL=<OTAB_LABEL_ROOTFS_B>/' \
+        -e 's/rd\.luks\.rootfs=[^ ]+/rd.luks.rootfs=PARTLABEL=<OTAB_LABEL_ROOTFS_B>/' \
+        cmdline
+    objcopy --update-section .cmdline=cmdline /mnt/EFI/BOOT/bootx64.efi
+    error_check "Replacing <OTAB_LABEL_BOOT_B> command-line failed"
+    umount /mnt
+}
+
+create_rootfs() {
+    partition_a="/dev/disk/by-partlabel/<OTAB_LABEL_ROOTFS_A>"
+    partition_b="/dev/disk/by-partlabel/<OTAB_LABEL_ROOTFS_B>"
+    disk="$(lsblk -no pkname "$partition_a")"
+    size="$(lsblk -no size "$partition_a")"
+    echo "Creating <OTAB_LABEL_ROOTFS_B> partition"
+    # 1st - create new partition, use recommended values
+    # 2nd - set partlabel of last (default) partition to <OTAB_LABEL_ROOTFS_OVERLAY>
+    printf '%s\n' "n" "" "" "+${size}" "x" "n" "" "<OTAB_LABEL_ROOTFS_B>" "r" "w" |
+        fdisk "/dev/$disk" >/dev/null 2>&1
+    error_check "Failed to create new partition on /dev/$disk"
+    sleep 2
+    echo "Cloning <OTAB_LABEL_ROOTFS_A> to <OTAB_LABEL_ROOTFS_B>"
+    dd if="$partition_a" of="$partition_b" bs=1M >/dev/null 2>&1
+    error_check "Cloning failed."
+    echo "Updating label and UUID"
+    tune2fs "$partition_b" -L "<OTAB_LABEL_ROOTFS_B>" -U "<ROOT_B_UUID>" >/dev/null
+    error_check "Failed to update label and UUID of <OTAB_LABEL_ROOTFS_B>"
+    echo "Updating /etc/fstab"
+    mkdir -p /mnt
+    mount "$partition_b" /mnt
+    error_check "Failed to mount <OTAB_LABEL_ROOTFS_B>"
+    sed -ri 's|(.*)\s/boot\s|LABEL=<OTAB_LABEL_BOOT_B> /boot |' /mnt/etc/fstab
+    umount /mnt
+}
+
+create_overlay() {
+    partition="/dev/disk/by-partlabel/<OTAB_LABEL_ROOTFS_OVERLAY>"
+    disk="$(lsblk -no pkname "/dev/disk/by-partlabel/<OTAB_LABEL_ROOTFS_A>")"
+    echo "Creating <OTAB_LABEL_ROOTFS_OVERLAY> partition"
+    # 1st - create new partition, use recommended values
+    # 2nd - set partlabel of last (default) partition to <OTAB_LABEL_ROOTFS_OVERLAY>
+    printf '%s\n' "n" "" "" "" "x" "n" "" "<OTAB_LABEL_ROOTFS_OVERLAY>" "r" "w" |
+        fdisk "/dev/$disk" >/dev/null 2>&1
+    error_check "Failed to create new partition on /dev/$disk"
+    sleep 2
+    mkfs.ext4 -qFL "<OTAB_LABEL_ROOTFS_OVERLAY>" "$partition" >/dev/null
+    error_check "Failed to create ext4 filesystem on $partition"
+}

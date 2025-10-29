@@ -1,6 +1,4 @@
 bootloader --timeout=0 --ptable gpt
 
 part /boot  --source bootimg-partition  --fstype=vfat --label ${OTAB_LABEL_BOOT_A}          --align 2048    --fixed-size ${OTAB_BOOT_PART_SIZE}   --uuid ${BOOT_A_UUID} --use-uuid --active
-part        --source bootimg-partition  --fstype=vfat --label ${OTAB_LABEL_BOOT_B}          --align 2048    --fixed-size ${OTAB_BOOT_PART_SIZE}   --uuid ${BOOT_B_UUID} --use-uuid --active
-part /      --source rootfs-sed         --fstype=ext4 --label ${OTAB_LABEL_ROOTFS_A}        --align 2048    --fixed-size ${OTAB_ROOTFS_PART_SIZE} --uuid ${ROOT_A_UUID} --use-uuid --sourceparams "sed_filter_var=FSTAB_A_SED,sed_filter_separator=@" ${OTAB_WIC_ROOTFS_EXTRA_ARGS}
-part        --source rootfs-sed         --fstype=ext4 --label ${OTAB_LABEL_ROOTFS_B}        --align 2048    --fixed-size ${OTAB_ROOTFS_PART_SIZE} --uuid ${ROOT_B_UUID} --use-uuid --sourceparams "sed_filter_var=FSTAB_B_SED,sed_filter_separator=@" ${OTAB_WIC_ROOTFS_EXTRA_ARGS}
+part /      --source rootfs         --fstype=ext4 --label ${OTAB_LABEL_ROOTFS_A}        --align 2048    --fixed-size ${OTAB_ROOTFS_PART_SIZE} --uuid ${ROOT_A_UUID} --use-uuid
