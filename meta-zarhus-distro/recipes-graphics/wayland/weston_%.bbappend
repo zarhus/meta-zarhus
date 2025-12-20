@@ -1,0 +1,1 @@
+PACKAGECONFIG:append:dbg = " rdp"
