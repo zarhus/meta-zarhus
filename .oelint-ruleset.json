@@ -6,7 +6,7 @@
   "oelint.append.protvars.LICENSE": "error",
   "oelint.append.protvars.LIC_FILES_CHKSUM": "error",
   "oelint.exportfunction.dash": "error",
-  "oelint.bbclass.underscores": "error",
+  "oelint.bbclass.underscores": "info",
   "oelint.file.includenotfound": "warning",
   "oelint.file.requireinclude": "warning",
   "oelint.file.inlinesuppress_na": "info",

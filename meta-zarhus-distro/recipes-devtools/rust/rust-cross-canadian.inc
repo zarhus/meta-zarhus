@@ -2,7 +2,6 @@ SUMMARY = "Rust compiler and runtime libaries (cross-canadian for ${TARGET_ARCH}
 PN = "rust-cross-canadian-${TRANSLATED_TARGET_ARCH}"
 CVE_PRODUCT = "rust"
 
-inherit rust-target-config
 inherit rust-common
 
 LICENSE = "MIT"
